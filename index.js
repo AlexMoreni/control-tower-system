@@ -1,6 +1,7 @@
 const inquirer = require("inquirer");
 const chalk = require("chalk");
 const fs = require("fs");
+const path = require("path");
 
 class newAirways {
   constructor(name, origin, destiny, size) {
@@ -9,6 +10,14 @@ class newAirways {
     this.origin = origin;
     this.destiny = destiny;
     this.size = parseInt(size);
+  }
+}
+
+class newPilot {
+  constructor(registration, name, qualification) {
+    this.registration = registration;
+    this.name = name;
+    this.qualification = qualification;
   }
 }
 
@@ -23,6 +32,8 @@ function commandTower() {
         message: "O que você deseja fazer?",
         choices: [
           "Listar aerovias",
+          "Listar aeronaves",
+          "Serviço pilotos",
           "Listar altitudes livre",
           "Aprovar plano de voo",
           "Listar planos",
@@ -39,6 +50,8 @@ function commandTower() {
         listAirways();
       } else if (options === "Listar aeronaves") {
         console.log("");
+      } else if (options === "Serviço pilotos") {
+        pilotService();
       } else if (options === "Listar altitudes livre") {
         console.log("");
       } else if (options === "Aprovar plano de voo") {
@@ -168,6 +181,145 @@ const listAirways = () => {
           })
           .catch((err) => console.log(err));
       } else if (options === "Voltar") {
+        commandTower();
+      }
+    })
+    .catch((err) => console.log(err));
+};
+
+/*Opcão - Serviço Pilotos */
+const pilotService = () => {
+  inquirer
+    .prompt([
+      {
+        type: "list",
+        name: "actionsPilotServices",
+        message: "O que você deseja fazer?",
+        choices: ["Cadastrar piloto", "Pilotos", "Buscar Piloto", "Voltar"],
+      },
+    ])
+    .then((answers) => {
+      const option = answers["actionsPilotServices"];
+      if (option === "Cadastrar piloto") {
+        inquirer
+          .prompt([
+            {
+              name: "Registration",
+              message: "Matricula do piloto:",
+            },
+            {
+              name: "Name",
+              message: "Nome do piloto:",
+            },
+            {
+              name: "Qualification",
+              message: "Habilitação do piloto:",
+            },
+          ])
+          .then((answers) => {
+            const registration = answers["Registration"];
+            const name = answers["Name"];
+            const qualification = answers["Qualification"];
+
+            const pilot = new newPilot(registration, name, qualification);
+
+            if (!fs.existsSync("pilots")) {
+              fs.mkdirSync("pilots");
+            }
+
+            if (fs.existsSync(`pilots/${pilot.name}.json`)) {
+              console.log(chalk.bgRed.black("Esse piloto já está cadastrado!"));
+              pilotService();
+              return;
+            }
+
+            const pilotJSON = JSON.stringify(pilot, null, 2);
+
+            fs.writeFileSync(`pilots/${pilot.name}.json`, pilotJSON, (err) => {
+              console.log(err);
+            });
+
+            console.log(chalk.bgGreen.black("Piloto cadastrado com sucesso!"));
+            pilotService();
+            return;
+          })
+          .catch((err) => console.log(err));
+      } else if (option === "Pilotos") {
+        if (!fs.existsSync("pilots")) {
+          console.log(
+            chalk.bgRed.black("Nenhum piloto cadastrado no sistema!")
+          );
+          pilotService();
+          return;
+        }
+
+        const directoryPath = "./pilots";
+
+        fs.readdir(directoryPath, (err, files) => {
+          if (err) {
+            console.error("Erro ao ler o diretório:", err);
+            return;
+          }
+
+          const jsonFiles = files.filter(
+            (file) => path.extname(file).toLowerCase() === ".json"
+          );
+
+          jsonFiles.forEach((jsonFile) => {
+            const filePath = path.join(directoryPath, jsonFile);
+
+            fs.readFile(filePath, "utf8", (err, data) => {
+              if (err) {
+                console.error("Erro ao ler o arquivo:", err);
+                return;
+              }
+
+              const jsonData = JSON.parse(data);
+
+              console.log(`Piloto ${jsonFile.replace(".json", "")}:`, jsonData);
+            });
+          });
+        });
+      } else if (option === "Buscar piloto") {
+        if (!fs.existsSync("pilots")) {
+          console.log(
+            chalk.bgRed.black("Nenhum piloto cadastrado no sistema!")
+          );
+          pilotService();
+          return;
+        }
+
+        inquirer
+          .prompt([
+            {
+              name: "NamePilot",
+              message: "Qual piloto deseja localizar?",
+            },
+          ])
+          .then((answers) => {
+            const namePilot = answers["namePilot"];
+
+            if (fs.existsSync(`pilots/${namePilot}.json`)) {
+              fs.readFile(`pilots/${namePilot}.json`, "utf8", (err, data) => {
+                if (err) {
+                  console.log(err);
+                  return;
+                }
+
+                try {
+                  const jsonData = JSON.parse(data);
+                  const formattedData = JSON.stringify(jsonData, null, 2);
+                  console.log(`Piloto encontrado:\n${formattedData}`);
+                  pilotService();
+                } catch (parseError) {
+                  console.log("Erro em converter para string!", parseError);
+                  return;
+                }
+              });
+            }
+          })
+          .catch((err) => console.log(err));
+      } else if ((option = "Voltar")) {
         commandTower();
       }
     })
