@@ -56,8 +56,7 @@ class newFightPlan {
     hour,
     idAirways,
     altitude,
-    slot,
-    canceled
+    slot
   ) {
     this.id = Math.round(Math.random() * 1000);
     this.pilotEnrollment = pilotEnrollment;
@@ -66,8 +65,8 @@ class newFightPlan {
     this.hour = hour;
     this.idAirways = idAirways;
     this.altitude = parseInt(altitude);
-    this.slot = slot;
-    this.canceled = canceled;
+    this.slot = parseInt([slot]);
+    this.canceled = false;
   }
 }
 
@@ -109,7 +108,7 @@ function commandTower() {
       } else if (options === "Listar planos de voo") {
         listFlightPlan();
       } else if (options === "Cancelar plano de voo") {
-        console.log("");
+        deleteFlightPlan();
       } else if (options === "Listar ocupação") {
         console.log("");
       } else if (options === "Sair") {
@@ -664,10 +663,6 @@ const approveFlightPlan = () => {
               name: "Slots",
               message: "Slots:",
             },
-            {
-              name: "Canceled",
-              message: "Cancelado:",
-            },
           ])
           .then((answers) => {
             const pilotEnrollment = answers["PilotEnrollment"];
@@ -677,7 +672,6 @@ const approveFlightPlan = () => {
             const idAirways = answers["IDAirways"];
             const altitude = answers["Altitude"];
             const slot = answers["Slots"];
-            const canceled = answers["Canceled"];
 
             const fightPlan = new newFightPlan(
               pilotEnrollment,
@@ -686,8 +680,7 @@ const approveFlightPlan = () => {
               hour,
               idAirways,
               altitude,
-              slot,
-              canceled
+              slot
             );
 
             if (!fs.existsSync("fightPlan")) {
@@ -760,4 +753,62 @@ const listFlightPlan = () => {
       });
     });
   });
+};
+
+/*Opção - Apagar planos de voo*/
+const deleteFlightPlan = () => {
+  if (!fs.existsSync("./fightPlan")) {
+    console.log(
+      chalk.bgRed.black("Nenhum plano para ser deletado/cancelado no sistema!")
+    );
+    commandTower();
+    return;
+  }
+
+  inquirer
+    .prompt([
+      {
+        type: "list",
+        name: "DeleteFlightPlan",
+        message: "O que você deseja fazer?",
+        choices: ["Cancelar plano de voo", "Voltar"],
+      },
+    ])
+    .then((answers) => {
+      const option = answers["DeleteFlightPlan"];
+
+      if (option === "Cancelar plano de voo") {
+        inquirer
+          .prompt([
+            {
+              name: "ID",
+              message: "Qual ID do plano:",
+            },
+          ])
+          .then((answers) => {
+            const plan = answers["ID"];
+
+            if (!fs.existsSync(`fightPlan/${plan}.json`)) {
+              console.log(chalk.bgRed.black("Plano não encontrado"));
+              deleteFlightPlan();
+              return;
+            }
+
+            fs.unlinkSync(`fightPlan/${plan}.json`, (err) => {
+              if (err) {
+                console.log("Erro", err);
+              }
+
+              console.log(
+                chalk.bgGreen.black("Plano de voo apagado com sucesso!")
+              );
+
+              deleteFlightPlan();
+              return;
+            });
+          })
+          .catch((err) => console.log(err));
+      }
+    })
+    .catch((err) => console.log(err));
 };
