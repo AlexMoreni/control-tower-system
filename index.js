@@ -102,7 +102,7 @@ function commandTower() {
       } else if (options === "Serviço pilotos") {
         pilotService();
       } else if (options === "Listar altitudes livre") {
-        console.log("");
+        listFreeAltitudes();
       } else if (options === "Aprovar plano de voo") {
         approveFlightPlan();
       } else if (options === "Listar planos de voo") {
@@ -112,7 +112,7 @@ function commandTower() {
       } else if (options === "Listar ocupação") {
         console.log("");
       } else if (options === "Sair") {
-        console.log(chalk.bgGreen.black("Sistema finalizando..."));
+        console.log(chalk.bgGreen.black("Sistema finalizado!"));
         process.exit();
       }
     })
@@ -616,6 +616,51 @@ const pilotService = () => {
       }
     })
     .catch((err) => console.log(err));
+};
+
+/*Opção - Listar altitudes Lives */
+const listFreeAltitudes = () => {
+  if (!fs.existsSync("./fightPlan")) {
+    console.log(chalk.bgRed.black("Nenhum plano cadastrado no sistema!"));
+    commandTower();
+    return;
+  }
+
+  const directoryPath = "fightPlan";
+
+  fs.readdir(directoryPath, (err, files) => {
+    if (err) {
+      console.error("Erro ao ler o diretório:", err);
+      return;
+    }
+
+    const jsonFiles = files.filter(
+      (file) => path.extname(file).toLowerCase() === ".json"
+    );
+
+    jsonFiles.forEach((jsonFile) => {
+      const filePath = path.join(directoryPath, jsonFile);
+
+      fs.readFile(filePath, "utf8", (err, data) => {
+        if (err) {
+          console.error("Erro ao ler o arquivo:", err);
+          return;
+        }
+
+        const alt = [
+          25000, 26000, 27000, 28000, 29000, 30000, 31000, 32000, 33000, 34000,
+          35000,
+        ];
+
+        alt.forEach((alti) => {
+          if ((jsonFile.altitude = alti)) {
+            console.log(`Altitude livre: ${alti}`);
+          }
+        });
+        commandTower();
+      });
+    });
+  });
 };
 
 /*Opção - Aprovar Plano de voo */
