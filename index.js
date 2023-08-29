@@ -65,9 +65,9 @@ class newFightPlan {
     this.date = date;
     this.hour = hour;
     this.idAirways = idAirways;
-    this.altitude = altitude;
+    this.altitude = parseInt(altitude);
     this.slot = slot;
-    this.canceled = parseInt(canceled);
+    this.canceled = canceled;
   }
 }
 
@@ -86,9 +86,9 @@ function commandTower() {
           "Serviço pilotos",
           "Listar altitudes livre",
           "Aprovar plano de voo",
-          "Listar planos",
-          "Listar ocupação",
+          "Listar planos de voo",
           "Cancelar plano de voo",
+          "Listar ocupação",
           "Sair",
         ],
       },
@@ -105,14 +105,15 @@ function commandTower() {
       } else if (options === "Listar altitudes livre") {
         console.log("");
       } else if (options === "Aprovar plano de voo") {
-        ApproveFlightPlan();
-      } else if (options === "Listar planos") {
+        approveFlightPlan();
+      } else if (options === "Listar planos de voo") {
+        listFlightPlan();
+      } else if (options === "Cancelar plano de voo") {
         console.log("");
       } else if (options === "Listar ocupação") {
         console.log("");
-      } else if (options === "Cancelar plano de voo") {
-        console.log("");
       } else if (options === "Sair") {
+        console.log(chalk.bgGreen.black("Sistema finalizando..."));
         process.exit();
       }
     })
@@ -619,7 +620,7 @@ const pilotService = () => {
 };
 
 /*Opção - Aprovar Plano de voo */
-const ApproveFlightPlan = () => {
+const approveFlightPlan = () => {
   inquirer
     .prompt([
       {
@@ -695,7 +696,7 @@ const ApproveFlightPlan = () => {
 
             if (fs.existsSync(`fightPlan/${fightPlan.id}.json`)) {
               console.log(chalk.bgRed.black("Esse plano de voo ja existe!"));
-              ApproveFlightPlan();
+              approveFlightPlan();
               return;
             }
 
@@ -712,7 +713,7 @@ const ApproveFlightPlan = () => {
             console.log(
               chalk.bgGreen.black("Plano de voo criado com sucesso!")
             );
-            ApproveFlightPlan();
+            approveFlightPlan();
             return;
           })
           .catch((err) => console.log(err));
@@ -721,4 +722,42 @@ const ApproveFlightPlan = () => {
       }
     })
     .catch((err) => console.log(err));
+};
+
+/*Opção - Listar planos de voo */
+const listFlightPlan = () => {
+  if (!fs.existsSync("./fightPlan")) {
+    console.log(chalk.bgRed.black("Nenhum plano cadastrado no sistema!"));
+    commandTower();
+    return;
+  }
+
+  const directoryPath = "fightPlan";
+
+  fs.readdir(directoryPath, (err, files) => {
+    if (err) {
+      console.error("Erro ao ler o diretório:", err);
+      return;
+    }
+
+    const jsonFiles = files.filter(
+      (file) => path.extname(file).toLowerCase() === ".json"
+    );
+
+    jsonFiles.forEach((jsonFile) => {
+      const filePath = path.join(directoryPath, jsonFile);
+
+      fs.readFile(filePath, "utf8", (err, data) => {
+        if (err) {
+          console.error("Erro ao ler o arquivo:", err);
+          return;
+        }
+
+        const jsonData = JSON.parse(data);
+
+        console.log(`Plano -  ${jsonFile.replace(".json", "")}:`, jsonData);
+        commandTower();
+      });
+    });
+  });
 };
