@@ -21,6 +21,33 @@ class newPilot {
   }
 }
 
+class newAircraft {
+  constructor(prefix, type, cruisingSpeed, autonomy, maintenance) {
+    this.prefix = prefix;
+    this.type = type;
+    this.cruisingSpeed = parseInt(cruisingSpeed);
+    this.autonomy = parseInt(autonomy);
+    this.maintenance = maintenance;
+  }
+}
+
+class newAircraftCommercial extends newAircraft {
+  constructor(
+    prefix,
+    type,
+    cruisingSpeed,
+    autonomy,
+    cia,
+    weightMax,
+    passagersMax
+  ) {
+    super(prefix, type, cruisingSpeed, autonomy);
+    this.cia = cia;
+    this.weightMax = parseInt(weightMax);
+    this.passagersMax = parseInt(passagersMax);
+  }
+}
+
 commandTower();
 
 function commandTower() {
@@ -49,7 +76,7 @@ function commandTower() {
       if (options === "Listar aerovias") {
         listAirways();
       } else if (options === "Listar aeronaves") {
-        console.log("");
+        listAircraft();
       } else if (options === "Serviço pilotos") {
         pilotService();
       } else if (options === "Listar altitudes livre") {
@@ -181,6 +208,248 @@ const listAirways = () => {
           })
           .catch((err) => console.log(err));
       } else if (options === "Voltar") {
+        commandTower();
+      }
+    })
+    .catch((err) => console.log(err));
+};
+
+/*Opção - Listar aeronaves */
+const listAircraft = () => {
+  inquirer
+    .prompt([
+      {
+        type: "list",
+        name: "actionsListAircraft",
+        message: "O que você deseja fazer?",
+        choices: ["Listar aeronaves", "Registrar nova aeronave", "Voltar"],
+      },
+    ])
+    .then((answers) => {
+      const option = answers["actionsListAircraft"];
+
+      if (option === "Listar aeronaves") {
+        if (!fs.existsSync("aircrafts")) {
+          console.log(
+            chalk.bgRed.black("Nenhuma aeronave cadastrada no sistema!")
+          );
+          listAircraft();
+          return;
+        }
+
+        inquirer
+          .prompt([
+            {
+              type: "list",
+              name: "optionListAircraft",
+              message: "Qual tipo você deseja listar?",
+              choices: ["Aeronaves Particulares", "Aeronaves Comercial"],
+            },
+          ])
+          .then((answers) => {
+            const option = answers["optionListAircraft"];
+
+            let directoryPath = "";
+
+            if (option === "Aeronaves Particulares") {
+              directoryPath = "./aircrafts/private";
+            } else {
+              directoryPath = "./aircrafts/commercial";
+            }
+
+            if (!fs.existsSync(directoryPath)) {
+              console.log(
+                chalk.bgRed.black("Nenhuma aeronave desse tipo no sistema!")
+              );
+              listAircraft();
+              return;
+            }
+
+            fs.readdir(directoryPath, (err, files) => {
+              if (err) {
+                console.error("Erro ao ler o diretório:", err);
+                return;
+              }
+
+              const jsonFiles = files.filter(
+                (file) => path.extname(file).toLowerCase() === ".json"
+              );
+
+              jsonFiles.forEach((jsonFile) => {
+                const filePath = path.join(directoryPath, jsonFile);
+
+                fs.readFile(filePath, "utf8", (err, data) => {
+                  if (err) {
+                    console.error("Erro ao ler o arquivo:", err);
+                    return;
+                  }
+
+                  const jsonData = JSON.parse(data);
+
+                  console.log(
+                    `Aeronave -  ${jsonFile.replace(".json", "")}:`,
+                    jsonData
+                  );
+                });
+              });
+            });
+          })
+          .catch((err) => console.log(err));
+      } else if (option === "Registrar nova aeronave") {
+        inquirer
+          .prompt([
+            {
+              name: "Prefix",
+              message: "Prefixo da aeronave:",
+            },
+            {
+              name: "Type",
+              message: "Tipo da aeronave - Particular/Comercial?:",
+            },
+            {
+              name: "CruisingSpeed",
+              message: "Velocidade de Cruzeiro:",
+            },
+            {
+              name: "Autonomy",
+              message: "Autonomia:",
+            },
+          ])
+          .then((answers) => {
+            const prefix = answers["Prefix"];
+            const type = answers["Type"];
+            const cruisingSpeed = answers["CruisingSpeed"];
+            const autonomy = answers["Autonomy"];
+
+            const typeFormated = type.toLowerCase();
+
+            if (typeFormated === "particular") {
+              inquirer
+                .prompt([
+                  {
+                    name: "Maintenance",
+                    message: "Manutenção:",
+                  },
+                ])
+                .then((answers) => {
+                  const maintenance = answers["Maintenance"];
+
+                  const aircraft = new newAircraft(
+                    prefix,
+                    type,
+                    cruisingSpeed,
+                    autonomy,
+                    maintenance
+                  );
+
+                  if (!fs.existsSync("aircrafts")) {
+                    fs.mkdirSync("aircrafts");
+                  }
+
+                  if (!fs.existsSync("aircrafts/private")) {
+                    fs.mkdirSync("aircrafts/private");
+                  }
+
+                  if (
+                    fs.existsSync(`aircrafts/private/${aircraft.prefix}.json`)
+                  ) {
+                    console.log(
+                      chalk.bgRed.black(
+                        "Essa aeronave ja está cadastrada no sistema!"
+                      )
+                    );
+                    listAircraft();
+                    return;
+                  }
+
+                  const aircraftJSON = JSON.stringify(aircraft, null, 2);
+
+                  fs.writeFileSync(
+                    `aircrafts/private/${aircraft.prefix}.json`,
+                    aircraftJSON,
+                    (err) => {
+                      console.log(err);
+                    }
+                  );
+
+                  console.log(
+                    chalk.bgGreen.black("Aeronave cadastrada no sistema!")
+                  );
+                  listAircraft();
+                  return;
+                })
+                .catch((err) => console.log(err));
+            } else if (typeFormated === "comercial") {
+              inquirer
+                .prompt([
+                  {
+                    name: "NameCIA",
+                    message: "Nome CIA:",
+                  },
+                  {
+                    name: "WeightMax",
+                    message: "Peso Máximo:",
+                  },
+                  { name: "PassengersMax", message: "Passageiros Máximo:" },
+                ])
+                .then((answers) => {
+                  const cia = answers["NameCIA"];
+                  const weightMax = answers["WeightMax"];
+                  const passagersMax = answers["PassengersMax"];
+
+                  const aircraft = new newAircraftCommercial(
+                    prefix,
+                    type,
+                    cruisingSpeed,
+                    autonomy,
+                    cia,
+                    weightMax,
+                    passagersMax
+                  );
+
+                  if (!fs.existsSync("aircrafts")) {
+                    fs.mkdirSync("aircrafts");
+                  }
+
+                  if (!fs.existsSync("aircrafts/commercial")) {
+                    fs.mkdirSync("aircrafts/commercial");
+                  }
+
+                  if (
+                    fs.existsSync(
+                      `aircrafts/commercial/${aircraft.prefix}.json`
+                    )
+                  ) {
+                    console.log(
+                      chalk.bgRed.black(
+                        "Essa aeronave ja está cadastrada no sistema!"
+                      )
+                    );
+                    listAircraft();
+                    return;
+                  }
+
+                  const aircraftJSON = JSON.stringify(aircraft, null, 2);
+
+                  fs.writeFileSync(
+                    `aircrafts/commercial/${aircraft.prefix}.json`,
+                    aircraftJSON,
+                    (err) => {
+                      console.log(err);
+                    }
+                  );
+
+                  console.log(
+                    chalk.bgGreen.black("Aeronave cadastrada no sistema!")
+                  );
+                  listAircraft();
+                  return;
+                })
+                .catch((err) => console.log(err));
+            }
+          })
+          .catch((err) => console.log(err));
+      } else if (option === "Voltar") {
         commandTower();
       }
     })
