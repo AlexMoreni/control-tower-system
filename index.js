@@ -48,6 +48,29 @@ class newAircraftCommercial extends newAircraft {
   }
 }
 
+class newFightPlan {
+  constructor(
+    pilotEnrollment,
+    pilotPrefix,
+    date,
+    hour,
+    idAirways,
+    altitude,
+    slot,
+    canceled
+  ) {
+    this.id = Math.round(Math.random() * 1000);
+    this.pilotEnrollment = pilotEnrollment;
+    this.pilotPrefix = pilotPrefix;
+    this.date = date;
+    this.hour = hour;
+    this.idAirways = idAirways;
+    this.altitude = altitude;
+    this.slot = slot;
+    this.canceled = parseInt(canceled);
+  }
+}
+
 commandTower();
 
 function commandTower() {
@@ -82,7 +105,7 @@ function commandTower() {
       } else if (options === "Listar altitudes livre") {
         console.log("");
       } else if (options === "Aprovar plano de voo") {
-        console.log("");
+        ApproveFlightPlan();
       } else if (options === "Listar planos") {
         console.log("");
       } else if (options === "Listar ocupação") {
@@ -589,6 +612,111 @@ const pilotService = () => {
           })
           .catch((err) => console.log(err));
       } else if ((option = "Voltar")) {
+        commandTower();
+      }
+    })
+    .catch((err) => console.log(err));
+};
+
+/*Opção - Aprovar Plano de voo */
+const ApproveFlightPlan = () => {
+  inquirer
+    .prompt([
+      {
+        type: "list",
+        name: "ApproveFlightPlan",
+        message: "O que você deseja fazer?",
+        choices: ["Aprovar um novo plano", "Voltar"],
+      },
+    ])
+    .then((answers) => {
+      const option = answers["ApproveFlightPlan"];
+
+      if (option === "Aprovar um novo plano") {
+        inquirer
+          .prompt([
+            {
+              name: "PilotEnrollment",
+              message: "Matricula do Piloto:",
+            },
+            {
+              name: "PilotPrefix",
+              message: "Prefixo da aeronave:",
+            },
+            {
+              name: "Date",
+              message: "Data:",
+            },
+            {
+              name: "Hour",
+              message: "Horário:",
+            },
+            {
+              name: "IDAirways",
+              message: "ID aerovia:",
+            },
+            {
+              name: "Altitude",
+              message: "Altitude:",
+            },
+            {
+              name: "Slots",
+              message: "Slots:",
+            },
+            {
+              name: "Canceled",
+              message: "Cancelado:",
+            },
+          ])
+          .then((answers) => {
+            const pilotEnrollment = answers["PilotEnrollment"];
+            const pilotPrefix = answers["PilotPrefix"];
+            const date = answers["Date"];
+            const hour = answers["Hour"];
+            const idAirways = answers["IDAirways"];
+            const altitude = answers["Altitude"];
+            const slot = answers["Slots"];
+            const canceled = answers["Canceled"];
+
+            const fightPlan = new newFightPlan(
+              pilotEnrollment,
+              pilotPrefix,
+              date,
+              hour,
+              idAirways,
+              altitude,
+              slot,
+              canceled
+            );
+
+            if (!fs.existsSync("fightPlan")) {
+              fs.mkdirSync("fightPlan");
+            }
+
+            if (fs.existsSync(`fightPlan/${fightPlan.id}.json`)) {
+              console.log(chalk.bgRed.black("Esse plano de voo ja existe!"));
+              ApproveFlightPlan();
+              return;
+            }
+
+            const fightPlanJSON = JSON.stringify(fightPlan, null, 2);
+
+            fs.writeFileSync(
+              `fightPlan/${fightPlan.id}.json`,
+              fightPlanJSON,
+              (err) => {
+                console.log(err);
+              }
+            );
+
+            console.log(
+              chalk.bgGreen.black("Plano de voo criado com sucesso!")
+            );
+            ApproveFlightPlan();
+            return;
+          })
+          .catch((err) => console.log(err));
+      } else if (option === "Voltar") {
         commandTower();
       }
     })
