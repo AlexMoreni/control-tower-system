@@ -2,6 +2,7 @@ const inquirer = require("inquirer");
 const chalk = require("chalk");
 const fs = require("fs");
 const path = require("path");
+const { setTimeout } = require("timers/promises");
 
 class newAirways {
   constructor(name, origin, destiny, size) {
@@ -110,7 +111,7 @@ function commandTower() {
       } else if (options === "Cancelar plano de voo") {
         deleteFlightPlan();
       } else if (options === "Listar ocupação") {
-        console.log("");
+        airwayOccupation();
       } else if (options === "Sair") {
         console.log(chalk.bgGreen.black("Sistema finalizado!"));
         process.exit();
@@ -158,6 +159,44 @@ const listAirways = () => {
             const origin = answers["Origin"];
             const destiny = answers["Destiny"];
             const size = answers["Size"];
+
+            const arrEstados = [
+              "AC",
+              "AL",
+              "AP",
+              "AM",
+              "BA",
+              "CE",
+              "DF",
+              "ES",
+              "GO",
+              "MA",
+              "MT",
+              "MS",
+              "MG",
+              "PA",
+              "PB",
+              "PR",
+              "PE",
+              "PI",
+              "RJ",
+              "RN",
+              "RS",
+              "RO",
+              "RR",
+              "SC",
+              "SP",
+              "SE",
+              "TO",
+            ];
+
+            if (name.length < 4) {
+              console.log(
+                chalk.bgRed.black("O nome deve ter ao mínimo 4 letras!")
+              );
+              listAirways();
+              return;
+            }
 
             const airways = new newAirways(name, origin, destiny, size);
 
@@ -618,7 +657,7 @@ const pilotService = () => {
     .catch((err) => console.log(err));
 };
 
-/*Opção - Listar altitudes Lives */
+/*Opção - Listar altitudes Lives*/
 const listFreeAltitudes = () => {
   if (!fs.existsSync("./fightPlan")) {
     console.log(chalk.bgRed.black("Nenhum plano cadastrado no sistema!"));
@@ -627,6 +666,7 @@ const listFreeAltitudes = () => {
   }
 
   const directoryPath = "fightPlan";
+  const occupiedAltitudes = [];
 
   fs.readdir(directoryPath, (err, files) => {
     if (err) {
@@ -638,6 +678,9 @@ const listFreeAltitudes = () => {
       (file) => path.extname(file).toLowerCase() === ".json"
     );
 
+    console.log(chalk.bgGreen.black("Altitudes Livres!"));
+    let filesProcessed = 0;
+
     jsonFiles.forEach((jsonFile) => {
       const filePath = path.join(directoryPath, jsonFile);
 
@@ -647,17 +690,28 @@ const listFreeAltitudes = () => {
           return;
         }
 
-        const alt = [
+        const jsonData = JSON.parse(data);
+
+        const allowedAltitudes = [
           25000, 26000, 27000, 28000, 29000, 30000, 31000, 32000, 33000, 34000,
           35000,
         ];
 
-        alt.forEach((alti) => {
-          if ((jsonFile.altitude = alti)) {
-            console.log(`Altitude livre: ${alti}`);
+        allowedAltitudes.forEach((item) => {
+          if (jsonData.altitude === item) {
+            occupiedAltitudes.push(jsonData.altitude);
           }
         });
-        commandTower();
+
+        filesProcessed++;
+
+        if (filesProcessed === jsonFiles.length) {
+          const result = allowedAltitudes.filter(
+            (element) => !occupiedAltitudes.includes(element)
+          );
+          console.log(result);
+          airwayOccupation();
+        }
       });
     });
   });
@@ -762,7 +816,7 @@ const approveFlightPlan = () => {
     .catch((err) => console.log(err));
 };
 
-/*Opção - Listar planos de voo */
+/*Opção - Listar planos de voo*/
 const listFlightPlan = () => {
   if (!fs.existsSync("./fightPlan")) {
     console.log(chalk.bgRed.black("Nenhum plano cadastrado no sistema!"));
@@ -782,6 +836,11 @@ const listFlightPlan = () => {
       (file) => path.extname(file).toLowerCase() === ".json"
     );
 
+    console.log(
+      chalk.bgGreen.black(`${jsonFiles.length} Plano de voos encontrados:`)
+    );
+    let filesProcessed = 0;
+
     jsonFiles.forEach((jsonFile) => {
       const filePath = path.join(directoryPath, jsonFile);
 
@@ -794,7 +853,10 @@ const listFlightPlan = () => {
         const jsonData = JSON.parse(data);
 
         console.log(`Plano -  ${jsonFile.replace(".json", "")}:`, jsonData);
-        commandTower();
+        filesProcessed++;
+        if (filesProcessed === jsonFiles.length) {
+          commandTower();
+        }
       });
     });
   });
@@ -853,6 +915,332 @@ const deleteFlightPlan = () => {
             });
           })
           .catch((err) => console.log(err));
+      }
+    })
+    .catch((err) => console.log(err));
+};
+
+/*Opção - Ocupação aerovia */
+const airwayOccupation = () => {
+  inquirer
+    .prompt([
+      {
+        type: "list",
+        name: "airwayOccupation",
+        message: "O que você deseja fazer?",
+        choices: [
+          "Verificar slots ocupados",
+          "Altitudes ocupadas",
+          "Liberar slots",
+          "Ocupar slots",
+          "Consultar slot ocupado",
+          "Voltar",
+        ],
+      },
+    ])
+    .then((answers) => {
+      const option = answers["airwayOccupation"];
+
+      if (option === "Verificar slots ocupados") {
+        if (!fs.existsSync("fightPlan")) {
+          console.log(
+            chalk.bgRed.black("Nenhum plano de voo cadastrado no sistema!")
+          );
+          airwayOccupation();
+          return;
+        }
+        const directoryPath = "fightPlan";
+
+        fs.readdir(directoryPath, (err, files) => {
+          if (err) {
+            console.error("Erro ao ler o diretório:", err);
+            return;
+          }
+
+          const jsonFiles = files.filter(
+            (file) => path.extname(file).toLowerCase() === ".json"
+          );
+
+          let filesProcessed = 0;
+          console.log(chalk.bgRed.black("Slots Ocupados!"));
+          jsonFiles.forEach((jsonFile) => {
+            const filePath = path.join(directoryPath, jsonFile);
+
+            fs.readFile(filePath, "utf8", (err, data) => {
+              if (err) {
+                console.error("Erro ao ler o arquivo:", err);
+                return;
+              }
+
+              const jsonData = JSON.parse(data);
+
+              if (jsonData.slot != 0) {
+                console.log(
+                  `Plano ${jsonFile.replace(".json", "")}: ID aerovia: ${
+                    jsonData.id
+                  } - Altitude: ${jsonData.altitude} - Slots: ${jsonData.slot}`
+                );
+              }
+
+              filesProcessed++;
+
+              if (filesProcessed === jsonFiles.length) {
+                airwayOccupation();
+              }
+            });
+          });
+        });
+      } else if (option === "Altitudes ocupadas") {
+        if (!fs.existsSync("fightPlan")) {
+          console.log(
+            chalk.bgRed.black("Nenhum plano de voo cadastrado no sistema!")
+          );
+          airwayOccupation();
+          return;
+        }
+
+        const directoryPath = "fightPlan";
+
+        fs.readdir(directoryPath, (err, files) => {
+          if (err) {
+            console.error("Erro ao ler o diretório:", err);
+            return;
+          }
+
+          const jsonFiles = files.filter(
+            (file) => path.extname(file).toLowerCase() === ".json"
+          );
+
+          console.log(chalk.bgRed.black("Altitudes Ocupadas!"));
+          let filesProcessed = 0;
+
+          jsonFiles.forEach((jsonFile) => {
+            const filePath = path.join(directoryPath, jsonFile);
+
+            fs.readFile(filePath, "utf8", (err, data) => {
+              if (err) {
+                console.error("Erro ao ler o arquivo:", err);
+                return;
+              }
+
+              const jsonData = JSON.parse(data);
+
+              console.log(
+                `Plano ${jsonFile.replace(
+                  ".json",
+                  ""
+                )}: está ocupando a aeorvia: ${jsonData.id} - Data: ${
+                  jsonData.date
+                } - Altitude: ${jsonData.altitude}`
+              );
+
+              filesProcessed++;
+
+              if (filesProcessed === jsonFiles.length) {
+                airwayOccupation();
+              }
+            });
+          });
+        });
+      } else if (option === "Liberar slots") {
+        if (!fs.existsSync("fightPlan")) {
+          console.log(
+            chalk.bgRed.black("Nenhum plano de voo cadastrado no sistema!")
+          );
+          airwayOccupation();
+          return;
+        }
+
+        inquirer
+          .prompt([
+            {
+              name: "LiberalSlots",
+              message: "Qual slot deseja liberar?",
+            },
+          ])
+          .then((answers) => {
+            const slots = answers["LiberalSlots"];
+
+            const directoryPath = "fightPlan";
+
+            fs.readdir(directoryPath, (err, files) => {
+              if (err) {
+                console.error("Erro ao ler o diretório:", err);
+                return;
+              }
+
+              const jsonFiles = files.filter(
+                (file) => path.extname(file).toLowerCase() === ".json"
+              );
+
+              jsonFiles.forEach((jsonFile) => {
+                const filePath = path.join(directoryPath, jsonFile);
+
+                fs.readFile(filePath, "utf8", (err, data) => {
+                  if (err) {
+                    console.error("Erro ao ler o arquivo:", err);
+                    return;
+                  }
+
+                  const jsonData = JSON.parse(data);
+
+                  if (parseInt(slots) === jsonData.slot) {
+                    jsonData.slot = 0;
+                    const updatedData = JSON.stringify(jsonData, null, 2);
+
+                    fs.writeFileSync(filePath, updatedData, "utf8", (err) => {
+                      if (err) {
+                        return;
+                      }
+                    });
+                  }
+                });
+              });
+            });
+            console.log(chalk.bgGreen.black("Slot atualizado com sucesso!"));
+            airwayOccupation();
+          })
+          .catch((err) => console.log(err));
+      } else if (option === "Ocupar slots") {
+        if (!fs.existsSync("fightPlan")) {
+          console.log(
+            chalk.bgRed.black("Nenhum plano de voo cadastrado no sistema!")
+          );
+          airwayOccupation();
+          return;
+        }
+
+        inquirer
+          .prompt([
+            {
+              name: "OccupySlots",
+              message: "Qual plano de voo deseja inserir slot?",
+            },
+          ])
+          .then((answers) => {
+            const plan = answers["OccupySlots"];
+
+            if (!fs.existsSync(`fightPlan/${plan}.json`)) {
+              console.log(chalk.bgRed.black("Plano não encontrado!"));
+              airwayOccupation();
+              return;
+            } else {
+              inquirer
+                .prompt([
+                  {
+                    name: "NumberSlot",
+                    message: "Qual slot deseja inserir?",
+                  },
+                ])
+                .then((answers) => {
+                  const numberSlot = answers["NumberSlot"];
+
+                  fs.readFile(`fightPlan/${plan}.json`, "utf8", (err, data) => {
+                    if (err) {
+                      console.log(err);
+                      return;
+                    }
+
+                    try {
+                      const jsonData = JSON.parse(data);
+                      jsonData.slot = parseInt(numberSlot);
+                      const updatedData = JSON.stringify(jsonData, null, 2);
+
+                      fs.writeFileSync(
+                        `fightPlan/${plan}.json`,
+                        updatedData,
+                        "utf8",
+                        (err) => {
+                          if (err) {
+                            return;
+                          }
+                        }
+                      );
+
+                      console.log(
+                        chalk.bgGreen.black("Slot inserido com sucesso!")
+                      );
+                      airwayOccupation();
+                    } catch (parseError) {
+                      console.log("Erro em converter para string!", parseError);
+                      return;
+                    }
+                  });
+                })
+                .catch((err) => console.log(err));
+            }
+          })
+          .catch((err) => console.log(err));
+      } else if (option === "Consultar slot ocupado") {
+        if (!fs.existsSync("fightPlan")) {
+          console.log(
+            chalk.bgRed.black("Nenhum plano de voo cadastrado no sistema!")
+          );
+          airwayOccupation();
+          return;
+        }
+
+        inquirer
+          .prompt([
+            {
+              name: "ConsultSlot",
+              message: "Qual slot deseja consultar:",
+            },
+          ])
+          .then((answers) => {
+            const numberSlot = answers["ConsultSlot"];
+
+            const directoryPath = "fightPlan";
+
+            fs.readdir(directoryPath, (err, files) => {
+              if (err) {
+                console.error("Erro ao ler o diretório:", err);
+                return;
+              }
+
+              const jsonFiles = files.filter(
+                (file) => path.extname(file).toLowerCase() === ".json"
+              );
+
+              let filesProcessed = 0;
+
+              jsonFiles.forEach((jsonFile) => {
+                const filePath = path.join(directoryPath, jsonFile);
+
+                fs.readFile(filePath, "utf8", (err, data) => {
+                  if (err) {
+                    console.error("Erro ao ler o arquivo:", err);
+                    return;
+                  }
+
+                  const jsonData = JSON.parse(data);
+
+                  if (jsonData.slot === parseInt(numberSlot)) {
+                    console.log(chalk.bgGreen.black("Slot Encontrado!"));
+                    console.log(
+                      `Plano ${jsonFile.replace(".json", "")}: ID aerovia: ${
+                        jsonData.id
+                      } Data: ${jsonData.date} - Altitude: ${
+                        jsonData.altitude
+                      } - Slots: ${jsonData.slot}`
+                    );
+                    airwayOccupation();
+                    return;
+                  }
+
+                  filesProcessed++;
+
+                  if (filesProcessed === jsonFiles.length) {
+                    console.log(chalk.bgRed.black("Nenhum slot encontrado!"));
+                    airwayOccupation();
+                  }
+                });
+              });
+            });
+          })
+          .catch((err) => console.log(err));
+      } else if (option === "Voltar") {
+        commandTower();
       }
     })
     .catch((err) => console.log(err));
