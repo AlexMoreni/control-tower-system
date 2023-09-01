@@ -2,7 +2,6 @@ const inquirer = require("inquirer");
 const chalk = require("chalk");
 const fs = require("fs");
 const path = require("path");
-const { setTimeout } = require("timers/promises");
 
 class newAirways {
   constructor(name, origin, destiny, size) {
@@ -189,10 +188,39 @@ const listAirways = () => {
               "SE",
               "TO",
             ];
+            var regex = /[a-zA-Z]/;
 
             if (name.length < 4) {
               console.log(
                 chalk.bgRed.black("O nome deve ter ao mínimo 4 letras!")
+              );
+              listAirways();
+              return;
+            }
+
+            if (!arrEstados.includes(origin)) {
+              console.log(
+                chalk.bgRed.black("Insira um estado válido para a origem!")
+              );
+              console.log(chalk.bgGray.white(`Formato: ${arrEstados[3]}`));
+              listAirways();
+              return;
+            }
+
+            if (!arrEstados.includes(destiny)) {
+              console.log(
+                chalk.bgRed.black("Insira um estado válido para o destino!")
+              );
+              console.log(chalk.bgGray.white(`Formato: ${arrEstados[2]}`));
+              listAirways();
+              return;
+            }
+
+            if (regex.test(size)) {
+              console.log(
+                chalk.bgRed.black(
+                  "O tamanho não pode conter letras, apenas números!"
+                )
               );
               listAirways();
               return;
@@ -396,6 +424,46 @@ const listAircraft = () => {
                 .then((answers) => {
                   const maintenance = answers["Maintenance"];
 
+                  var regex = /[a-zA-Z]/;
+
+                  if (regex.test(cruisingSpeed)) {
+                    console.log(
+                      chalk.bgRed.black(
+                        "Padrão não permitido para velocidade de cruzeiro, digite apenas números"
+                      )
+                    );
+                    listAircraft();
+                    return;
+                  }
+
+                  if (regex.test(autonomy)) {
+                    console.log(
+                      chalk.bgRed.black(
+                        "Padrão não permitido para autonomia, digite apenas números"
+                      )
+                    );
+                    listAircraft();
+                    return;
+                  }
+
+                  if (regex.test(maintenance)) {
+                    console.log(
+                      chalk.bgRed.black(
+                        "Padrão não permitido para manutenção, digite apenas números"
+                      )
+                    );
+                    listAircraft();
+                    return;
+                  }
+
+                  if (maintenance.length < 10) {
+                    console.log(
+                      chalk.bgRed.black(
+                        "Padrão incorreto para data de manuntenção, padrão esperado: 00/00/0000"
+                      )
+                    );
+                  }
+
                   const aircraft = new newAircraft(
                     prefix,
                     type,
@@ -459,6 +527,56 @@ const listAircraft = () => {
                   const weightMax = answers["WeightMax"];
                   const passagersMax = answers["PassengersMax"];
 
+                  var regex = /[a-zA-Z]/;
+
+                  if (regex.test(cruisingSpeed)) {
+                    console.log(
+                      chalk.bgRed.black(
+                        "Padrão não permitido para velocidade de cruzeiro, digite apenas números"
+                      )
+                    );
+                    listAircraft();
+                    return;
+                  }
+
+                  if (regex.test(autonomy)) {
+                    console.log(
+                      chalk.bgRed.black(
+                        "Padrão não permitido para autonomia, digite apenas números"
+                      )
+                    );
+                    listAircraft();
+                    return;
+                  }
+
+                  if (cia.length < 3) {
+                    console.log(
+                      chalk.bgRed.black(
+                        "Nome curto para CIA, insira ao menos 3 letras"
+                      )
+                    );
+                  }
+
+                  if (regex.test(weightMax)) {
+                    console.log(
+                      chalk.bgRed.black(
+                        "Padrão não permitido para peso, digite apenas números"
+                      )
+                    );
+                    listAircraft();
+                    return;
+                  }
+
+                  if (regex.test(passagersMax)) {
+                    console.log(
+                      chalk.bgRed.black(
+                        "Padrão não permitido para quantidade de passageiros, digite apenas números"
+                      )
+                    );
+                    listAircraft();
+                    return;
+                  }
+
                   const aircraft = new newAircraftCommercial(
                     prefix,
                     type,
@@ -508,6 +626,12 @@ const listAircraft = () => {
                   return;
                 })
                 .catch((err) => console.log(err));
+            } else {
+              console.log(
+                chalk.bgRed.black(
+                  "Tipo não permitido apenas particular/comercial"
+                )
+              );
             }
           })
           .catch((err) => console.log(err));
@@ -550,7 +674,50 @@ const pilotService = () => {
           .then((answers) => {
             const registration = answers["Registration"];
             const name = answers["Name"];
-            const qualification = answers["Qualification"];
+            let qualification = answers["Qualification"];
+
+            var regex = /[a-zA-Z]/;
+
+            if (regex.test(registration)) {
+              console.log(
+                chalk.bgRed.black(
+                  "Padrão não permitido para matricula do piloto, digite apenas números"
+                )
+              );
+              pilotService();
+              return;
+            }
+
+            if (name.length < 3) {
+              console.log(
+                chalk.bgRed.black(
+                  "Nome inválido, insira um nome igual o maior que 3 letras"
+                )
+              );
+              pilotService();
+              return;
+            }
+
+            const qualificationFormated = qualification.toLowerCase();
+
+            if (
+              qualificationFormated !== "valido" &&
+              qualificationFormated !== "invalido"
+            ) {
+              console.log(
+                chalk.bgRed.black(
+                  "Por favor, digite apenas: Valido ou Invalido para habilitação do piloto"
+                )
+              );
+              pilotService();
+              return;
+            }
+
+            if (qualificationFormated === "valido") {
+              qualification = true;
+            } else {
+              qualification = false;
+            }
 
             const pilot = new newPilot(registration, name, qualification);
 
@@ -709,7 +876,7 @@ const listFreeAltitudes = () => {
           const result = allowedAltitudes.filter(
             (element) => !occupiedAltitudes.includes(element)
           );
-          console.log(result);
+          console.log(`Altitudes livres: ${result}`);
           airwayOccupation();
         }
       });
@@ -771,6 +938,68 @@ const approveFlightPlan = () => {
             const idAirways = answers["IDAirways"];
             const altitude = answers["Altitude"];
             const slot = answers["Slots"];
+
+            var regex = /[a-zA-Z]/;
+
+            if (regex.test(pilotEnrollment)) {
+              console.log(
+                chalk.bgRed.black(
+                  "Padrão não permitido para matricula do piloto, digite apenas números"
+                )
+              );
+              commandTower();
+              return;
+            }
+
+            if (date.length < 10) {
+              console.log(
+                chalk.bgRed.black(
+                  "Padrão não permitido para data digite apenas números e no formato: 00/00/0000"
+                )
+              );
+              commandTower();
+              return;
+            }
+
+            if (hour.length < 5) {
+              console.log(
+                chalk.bgRed.black(
+                  "Padrão não permitido para hora digite apenas números e no formato: 00:00"
+                )
+              );
+              commandTower();
+              return;
+            }
+
+            if (regex.test(altitude)) {
+              console.log(
+                chalk.bgRed.black(
+                  "Padrão não permitido para altitude, digite apenas números"
+                )
+              );
+              commandTower();
+              return;
+            }
+
+            if (altitude < 25000 || altitude > 35000) {
+              console.log(
+                chalk.bgRed.black(
+                  "Altura não permitida para altitude, fique entre 25000 a 35000"
+                )
+              );
+              commandTower();
+              return;
+            }
+
+            if (regex.test(slot)) {
+              console.log(
+                chalk.bgRed.black(
+                  "Padrão não permitido para slots, digite apenas números"
+                )
+              );
+              commandTower();
+              return;
+            }
 
             const fightPlan = new newFightPlan(
               pilotEnrollment,
