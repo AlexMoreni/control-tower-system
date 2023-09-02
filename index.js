@@ -4,9 +4,8 @@ const fs = require("fs");
 const path = require("path");
 
 class newAirways {
-  constructor(name, origin, destiny, size) {
-    this.id = Math.round(Math.random() * 1000);
-    this.name = name;
+  constructor(id, origin, destiny, size) {
+    this.id = id;
     this.origin = origin;
     this.destiny = destiny;
     this.size = parseInt(size);
@@ -138,7 +137,7 @@ const listAirways = () => {
           .prompt([
             {
               name: "NameAirways",
-              message: "Qual o nome:",
+              message: "Qual o ID da aerovia?:",
             },
             {
               name: "Origin",
@@ -154,7 +153,7 @@ const listAirways = () => {
             },
           ])
           .then((answers) => {
-            const name = answers["NameAirways"];
+            const id = answers["NameAirways"];
             const origin = answers["Origin"];
             const destiny = answers["Destiny"];
             const size = answers["Size"];
@@ -190,7 +189,7 @@ const listAirways = () => {
             ];
             var regex = /[a-zA-Z]/;
 
-            if (name.length < 4) {
+            if (id.length < 4) {
               console.log(
                 chalk.bgRed.black("Insira um nome maior que 4 letras")
               );
@@ -226,7 +225,7 @@ const listAirways = () => {
               return;
             }
 
-            const airways = new newAirways(name, origin, destiny, size);
+            const airways = new newAirways(id, origin, destiny, size);
 
             if (!fs.existsSync("airways")) {
               fs.mkdirSync("airways");
@@ -266,7 +265,7 @@ const listAirways = () => {
           .prompt([
             {
               name: "nameAirways",
-              message: "Digite o nome da aerovia que deseja buscar:",
+              message: "Digite o ID da aerovia que deseja buscar:",
             },
           ])
           .then((answers) => {
@@ -333,23 +332,18 @@ const listAircraft = () => {
               type: "list",
               name: "optionListAircraft",
               message: "Qual tipo você deseja listar?",
-              choices: ["Aeronaves Particulares", "Aeronaves Comercial"],
+              choices: ["Particular", "Comercial"],
             },
           ])
           .then((answers) => {
             const option = answers["optionListAircraft"];
 
-            let directoryPath = "";
-
-            if (option === "Aeronaves Particulares") {
-              directoryPath = "./aircrafts/private";
-            } else {
-              directoryPath = "./aircrafts/commercial";
-            }
+            let directoryPath = "aircrafts";
+            let filesProcessed = 0;
 
             if (!fs.existsSync(directoryPath)) {
               console.log(
-                chalk.bgRed.black("Nenhuma aeronave desse tipo no sistema!")
+                chalk.bgRed.black("Nenhuma aeronave cadastrada no sistema!")
               );
               listAircraft();
               return;
@@ -376,10 +370,17 @@ const listAircraft = () => {
 
                   const jsonData = JSON.parse(data);
 
-                  console.log(
-                    `Aeronave -  ${jsonFile.replace(".json", "")}:`,
-                    jsonData
-                  );
+                  if (jsonData.type === option) {
+                    console.log(
+                      `Aeronave -  ${jsonFile.replace(".json", "")}:`,
+                      jsonData
+                    );
+                  }
+                  filesProcessed++;
+
+                  if (filesProcessed === jsonFiles.length) {
+                    listAircraft();
+                  }
                 });
               });
             });
@@ -411,9 +412,14 @@ const listAircraft = () => {
             const cruisingSpeed = answers["CruisingSpeed"];
             const autonomy = answers["Autonomy"];
 
-            const typeFormated = type.toLowerCase();
+            function capitalizeFirstLetter(string) {
+              return string.charAt(0).toUpperCase() + string.slice(1);
+            }
 
-            if (typeFormated === "particular") {
+            const preventType = type.toLowerCase(type);
+            const typeFormated = capitalizeFirstLetter(preventType);
+
+            if (typeFormated === "Particular") {
               inquirer
                 .prompt([
                   {
@@ -458,7 +464,7 @@ const listAircraft = () => {
 
                   const aircraft = new newAircraft(
                     prefix,
-                    type,
+                    typeFormated,
                     cruisingSpeed,
                     autonomy,
                     maintenance
@@ -495,7 +501,7 @@ const listAircraft = () => {
                   return;
                 })
                 .catch((err) => console.log(err));
-            } else if (typeFormated === "comercial") {
+            } else if (typeFormated === "Comercial") {
               inquirer
                 .prompt([
                   {
@@ -565,7 +571,7 @@ const listAircraft = () => {
 
                   const aircraft = new newAircraftCommercial(
                     prefix,
-                    type,
+                    typeFormated,
                     cruisingSpeed,
                     autonomy,
                     cia,
@@ -635,6 +641,7 @@ const pilotService = () => {
     ])
     .then((answers) => {
       const option = answers["actionsPilotServices"];
+
       if (option === "Cadastrar piloto") {
         inquirer
           .prompt([
@@ -779,11 +786,16 @@ const pilotService = () => {
           .prompt([
             {
               name: "NamePilot",
-              message: "Qual piloto deseja localizar?",
+              message: "Qual a matricula do piloto que deseja localizar?",
             },
           ])
           .then((answers) => {
-            const namePilot = answers["namePilot"];
+            const namePilot = answers["NamePilot"];
+
+            if (!fs.existsSync(`pilots/${namePilot}.json`)) {
+              console.log(chalk.bgRed.black("Piloto não encontrado!"));
+              pilotService();
+            }
 
             if (fs.existsSync(`pilots/${namePilot}.json`)) {
               fs.readFile(`pilots/${namePilot}.json`, "utf8", (err, data) => {
@@ -796,8 +808,7 @@ const pilotService = () => {
                   const jsonData = JSON.parse(data);
                   const formattedData = JSON.stringify(jsonData, null, 2);
                   console.log(`Piloto encontrado:\n${formattedData}`);
-                  pilotService();
-                  return;
+                  listAirways();
                 } catch (parseError) {
                   console.log("Erro em converter para string!", parseError);
                   return;
@@ -1299,7 +1310,7 @@ const airwayOccupation = () => {
                 `Plano ${jsonFile.replace(
                   ".json",
                   ""
-                )}: está ocupando a aeorvia: ${jsonData.id} - Data: ${
+                )}: está ocupando a aeorvia: ${jsonData.idAirways} - Data: ${
                   jsonData.date
                 } - Altitude: ${jsonData.altitude}`
               );
@@ -1325,7 +1336,7 @@ const airwayOccupation = () => {
           .prompt([
             {
               name: "LiberalSlots",
-              message: "Qual slot deseja liberar?",
+              message: "Qual plano deseja liberar?",
             },
           ])
           .then((answers) => {
@@ -1354,7 +1365,7 @@ const airwayOccupation = () => {
 
                   const jsonData = JSON.parse(data);
 
-                  if (parseInt(slots) === jsonData.slot) {
+                  if (parseInt(slots) === jsonData.id) {
                     jsonData.slot = 0;
                     const updatedData = JSON.stringify(jsonData, null, 2);
 
@@ -1394,51 +1405,78 @@ const airwayOccupation = () => {
               console.log(chalk.bgRed.black("Plano não encontrado!"));
               airwayOccupation();
               return;
-            } else {
-              inquirer
-                .prompt([
-                  {
-                    name: "NumberSlot",
-                    message: "Qual slot deseja inserir?",
-                  },
-                ])
-                .then((answers) => {
-                  const numberSlot = answers["NumberSlot"];
-
-                  fs.readFile(`fightPlan/${plan}.json`, "utf8", (err, data) => {
-                    if (err) {
-                      console.log(err);
-                      return;
-                    }
-
-                    try {
-                      const jsonData = JSON.parse(data);
-                      jsonData.slot = parseInt(numberSlot);
-                      const updatedData = JSON.stringify(jsonData, null, 2);
-
-                      fs.writeFileSync(
-                        `fightPlan/${plan}.json`,
-                        updatedData,
-                        "utf8",
-                        (err) => {
-                          if (err) {
-                            return;
-                          }
-                        }
-                      );
-
-                      console.log(
-                        chalk.bgGreen.black("Slot inserido com sucesso!")
-                      );
-                      airwayOccupation();
-                    } catch (parseError) {
-                      console.log("Erro em converter para string!", parseError);
-                      return;
-                    }
-                  });
-                })
-                .catch((err) => console.log(err));
             }
+
+            fs.readFile(`fightPlan/${plan}.json`, "utf8", (err, data) => {
+              let velocity = 0;
+              let sizeAirways = 0;
+
+              if (err) {
+                console.log(err);
+                return;
+              }
+
+              try {
+                const jsonData = JSON.parse(data);
+
+                //Velocidade aeronave
+                try {
+                  const aircraftData = fs.readFileSync(
+                    `aircrafts/${jsonData.pilotPrefix}.json`,
+                    "utf8"
+                  );
+                  const aircraftJsonData = JSON.parse(aircraftData);
+                  velocity = aircraftJsonData.cruisingSpeed;
+                } catch (err) {
+                  console.log(
+                    "Erro ao ler ou analisar o arquivo de aeronave:",
+                    err
+                  );
+                }
+
+                //Tamanho da pista
+                try {
+                  const airwaysData = fs.readFileSync(
+                    `airways/${jsonData.idAirways}.json`,
+                    "utf8"
+                  );
+                  const airwaysJsonData = JSON.parse(airwaysData);
+                  sizeAirways = airwaysJsonData.size;
+                } catch (err) {
+                  console.log(
+                    "Erro ao ler ou analisar o arquivo de airways:",
+                    err
+                  );
+                }
+
+                const timeHour = sizeAirways / velocity;
+                const timeMin = timeHour * 60;
+
+                jsonData.slot = Math.ceil(timeMin / 60);
+                const updatedData = JSON.stringify(jsonData, null, 2);
+
+                fs.writeFileSync(
+                  `fightPlan/${plan}.json`,
+                  updatedData,
+                  "utf8",
+                  (err) => {
+                    if (err) {
+                      return;
+                    }
+                  }
+                );
+
+                console.log(
+                  chalk.bgGreen.black(
+                    `Slot inserido com sucesso no plano ${plan}`
+                  )
+                );
+                airwayOccupation();
+              } catch (parseError) {
+                console.log("Erro em converter para string!", parseError);
+                return;
+              }
+            });
           })
           .catch((err) => console.log(err));
       } else if (option === "Consultar slot ocupado") {
