@@ -1051,7 +1051,15 @@ const approveFlightPlan = () => {
             const timeHour = sizeAirways / velocity;
             const timeMin = timeHour * 60;
 
-            slots = Math.ceil(timeMin / 60);
+            const hourStart = hour.split(":");
+
+            const resultHour = timeMin - 60;
+
+            if (resultHour + parseInt(hourStart[1]) > 60) {
+              slots = Math.ceil(timeMin / 60 + 1);
+            } else {
+              slots = Math.ceil(timeMin / 60);
+            }
 
             const fightPlan = new newFightPlan(
               pilotEnrollment,
@@ -1178,7 +1186,7 @@ const deleteFlightPlan = () => {
 
             if (!fs.existsSync(`fightPlan/${plan}.json`)) {
               console.log(chalk.bgRed.black("Plano não encontrado"));
-              deleteFlightPlan();
+              commandTower();
               return;
             }
 
@@ -1186,14 +1194,14 @@ const deleteFlightPlan = () => {
               if (err) {
                 console.log("Erro", err);
               }
-
-              console.log(
-                chalk.bgGreen.black("Plano de voo apagado com sucesso!")
-              );
-
-              deleteFlightPlan();
-              return;
             });
+
+            console.log(
+              chalk.bgGreen.black("Plano de voo apagado com sucesso!")
+            );
+
+            commandTower();
+            return;
           })
           .catch((err) => console.log(err));
       }
@@ -1449,12 +1457,22 @@ const airwayOccupation = () => {
                   );
                 }
 
+                let slots = 0;
+
                 const hourStart = jsonData.hour;
 
                 const timeHour = sizeAirways / velocity;
                 const timeMin = timeHour * 60;
 
-                const slots = Math.ceil(timeMin / 60);
+                const hourStartMinutes = hourStart.split(":");
+
+                const resultHour = timeMin - 60;
+
+                if (resultHour + parseInt(hourStartMinutes[1]) > 60) {
+                  slots = Math.ceil(timeMin / 60 + 1);
+                } else {
+                  slots = Math.ceil(timeMin / 60);
+                }
 
                 jsonData.slot = slots;
                 const updatedData = JSON.stringify(jsonData, null, 2);
@@ -1464,7 +1482,7 @@ const airwayOccupation = () => {
                 function timeInterval(inicial, quantidade) {
                   for (let i = 0; i < quantidade; i++) {
                     console.log(
-                      chalk.bgYellow.black(
+                      chalk.bgGreen.black(
                         `O plano irá ocupar ${inicial + i}:00 horas`
                       )
                     );
@@ -1472,7 +1490,7 @@ const airwayOccupation = () => {
                 }
 
                 console.log(
-                  chalk.bgYellow.black(`O plano irá ocupar ${slots} slots`)
+                  chalk.bgGreen.black(`O plano irá ocupar ${slots} slots`)
                 );
                 timeInterval(parseInt(hourStartFormated[0]), slots);
 
