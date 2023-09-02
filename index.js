@@ -1449,29 +1449,70 @@ const airwayOccupation = () => {
                   );
                 }
 
+                const hourStart = jsonData.hour;
+
                 const timeHour = sizeAirways / velocity;
                 const timeMin = timeHour * 60;
 
-                jsonData.slot = Math.ceil(timeMin / 60);
+                const slots = Math.ceil(timeMin / 60);
+
+                jsonData.slot = slots;
                 const updatedData = JSON.stringify(jsonData, null, 2);
 
-                fs.writeFileSync(
-                  `fightPlan/${plan}.json`,
-                  updatedData,
-                  "utf8",
-                  (err) => {
-                    if (err) {
-                      return;
-                    }
+                const hourStartFormated = hourStart.split(":");
+
+                function timeInterval(inicial, quantidade) {
+                  for (let i = 0; i < quantidade; i++) {
+                    console.log(
+                      chalk.bgYellow.black(
+                        `O plano irá ocupar ${inicial + i}:00 horas`
+                      )
+                    );
                   }
-                );
+                }
 
                 console.log(
-                  chalk.bgGreen.black(
-                    `Slot inserido com sucesso no plano ${plan}`
-                  )
+                  chalk.bgYellow.black(`O plano irá ocupar ${slots} slots`)
                 );
-                airwayOccupation();
+                timeInterval(parseInt(hourStartFormated[0]), slots);
+
+                inquirer
+                  .prompt([
+                    {
+                      type: "list",
+                      name: "ConfirmInsert",
+                      message: "Deseja realmente inserir?",
+                      choices: ["Confirmar", "Cancelar"],
+                    },
+                  ])
+                  .then((answers) => {
+                    const option = answers["ConfirmInsert"];
+
+                    if (option === "Confirmar") {
+                      fs.writeFileSync(
+                        `fightPlan/${plan}.json`,
+                        updatedData,
+                        "utf8",
+                        (err) => {
+                          if (err) {
+                            return;
+                          }
+                        }
+                      );
+
+                      console.log(
+                        chalk.bgGreen.black(
+                          `Slot inserido com sucesso no plano ${plan}`
+                        )
+                      );
+                      airwayOccupation();
+                    } else if (option === "Cancelar") {
+                      console.log(chalk.bgRed.black("Ok, cancelando"));
+                      airwayOccupation();
+                      return;
+                    }
+                  })
+                  .catch((err) => console.log(err));
               } catch (parseError) {
                 console.log("Erro em converter para string!", parseError);
                 return;
