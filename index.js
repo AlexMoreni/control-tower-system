@@ -65,7 +65,7 @@ class newFightPlan {
     this.hour = hour;
     this.idAirways = idAirways;
     this.altitude = parseInt(altitude);
-    this.slot = parseInt([slot]);
+    this.slot = slot;
     this.canceled = false;
   }
 }
@@ -137,8 +137,8 @@ const listAirways = () => {
         inquirer
           .prompt([
             {
-              name: "Name",
-              message: "Nome da aerovia:",
+              name: "NameAirways",
+              message: "Qual o nome:",
             },
             {
               name: "Origin",
@@ -154,7 +154,7 @@ const listAirways = () => {
             },
           ])
           .then((answers) => {
-            const name = answers["Name"];
+            const name = answers["NameAirways"];
             const origin = answers["Origin"];
             const destiny = answers["Destiny"];
             const size = answers["Size"];
@@ -192,7 +192,7 @@ const listAirways = () => {
 
             if (name.length < 4) {
               console.log(
-                chalk.bgRed.black("O nome deve ter ao mínimo 4 letras!")
+                chalk.bgRed.black("Insira um nome maior que 4 letras")
               );
               listAirways();
               return;
@@ -232,7 +232,7 @@ const listAirways = () => {
               fs.mkdirSync("airways");
             }
 
-            if (fs.existsSync(`airways/${airways.name}.json`)) {
+            if (fs.existsSync(`airways/${airways.id}.json`)) {
               console.log(
                 chalk.bgRed.black("Essa aerovia ja existe, escolha outro nome!")
               );
@@ -243,7 +243,7 @@ const listAirways = () => {
             const airwaysJSON = JSON.stringify(airways, null, 2);
 
             fs.writeFileSync(
-              `airways/${airways.name}.json`,
+              `airways/${airways.id}.json`,
               airwaysJSON,
               (err) => {
                 console.log(err);
@@ -446,22 +446,14 @@ const listAircraft = () => {
                     return;
                   }
 
-                  if (regex.test(maintenance)) {
+                  if (maintenance.length < 3) {
                     console.log(
                       chalk.bgRed.black(
-                        "Padrão não permitido para manutenção, digite apenas números"
+                        "Padrão incorreto para manuntenção, insira ao menos 3 letras"
                       )
                     );
                     listAircraft();
                     return;
-                  }
-
-                  if (maintenance.length < 10) {
-                    console.log(
-                      chalk.bgRed.black(
-                        "Padrão incorreto para data de manuntenção, padrão esperado: 00/00/0000"
-                      )
-                    );
                   }
 
                   const aircraft = new newAircraft(
@@ -476,13 +468,7 @@ const listAircraft = () => {
                     fs.mkdirSync("aircrafts");
                   }
 
-                  if (!fs.existsSync("aircrafts/private")) {
-                    fs.mkdirSync("aircrafts/private");
-                  }
-
-                  if (
-                    fs.existsSync(`aircrafts/private/${aircraft.prefix}.json`)
-                  ) {
+                  if (fs.existsSync(`aircrafts/${aircraft.prefix}.json`)) {
                     console.log(
                       chalk.bgRed.black(
                         "Essa aeronave ja está cadastrada no sistema!"
@@ -495,7 +481,7 @@ const listAircraft = () => {
                   const aircraftJSON = JSON.stringify(aircraft, null, 2);
 
                   fs.writeFileSync(
-                    `aircrafts/private/${aircraft.prefix}.json`,
+                    `aircrafts/${aircraft.prefix}.json`,
                     aircraftJSON,
                     (err) => {
                       console.log(err);
@@ -591,15 +577,7 @@ const listAircraft = () => {
                     fs.mkdirSync("aircrafts");
                   }
 
-                  if (!fs.existsSync("aircrafts/commercial")) {
-                    fs.mkdirSync("aircrafts/commercial");
-                  }
-
-                  if (
-                    fs.existsSync(
-                      `aircrafts/commercial/${aircraft.prefix}.json`
-                    )
-                  ) {
+                  if (fs.existsSync(`aircrafts/${aircraft.prefix}.json`)) {
                     console.log(
                       chalk.bgRed.black(
                         "Essa aeronave ja está cadastrada no sistema!"
@@ -612,7 +590,7 @@ const listAircraft = () => {
                   const aircraftJSON = JSON.stringify(aircraft, null, 2);
 
                   fs.writeFileSync(
-                    `aircrafts/commercial/${aircraft.prefix}.json`,
+                    `aircrafts/${aircraft.prefix}.json`,
                     aircraftJSON,
                     (err) => {
                       console.log(err);
@@ -632,6 +610,8 @@ const listAircraft = () => {
                   "Tipo não permitido apenas particular/comercial"
                 )
               );
+              listAircraft();
+              return;
             }
           })
           .catch((err) => console.log(err));
@@ -650,7 +630,7 @@ const pilotService = () => {
         type: "list",
         name: "actionsPilotServices",
         message: "O que você deseja fazer?",
-        choices: ["Cadastrar piloto", "Pilotos", "Buscar Piloto", "Voltar"],
+        choices: ["Cadastrar piloto", "Pilotos", "Buscar piloto", "Voltar"],
       },
     ])
     .then((answers) => {
@@ -676,12 +656,10 @@ const pilotService = () => {
             const name = answers["Name"];
             let qualification = answers["Qualification"];
 
-            var regex = /[a-zA-Z]/;
-
-            if (regex.test(registration)) {
+            if (registration.length < 3) {
               console.log(
                 chalk.bgRed.black(
-                  "Padrão não permitido para matricula do piloto, digite apenas números"
+                  "Matricula inválida, insira uma matricula igual o maior que 3 letras"
                 )
               );
               pilotService();
@@ -725,7 +703,7 @@ const pilotService = () => {
               fs.mkdirSync("pilots");
             }
 
-            if (fs.existsSync(`pilots/${pilot.name}.json`)) {
+            if (fs.existsSync(`pilots/${pilot.registration}.json`)) {
               console.log(chalk.bgRed.black("Esse piloto já está cadastrado!"));
               pilotService();
               return;
@@ -733,9 +711,13 @@ const pilotService = () => {
 
             const pilotJSON = JSON.stringify(pilot, null, 2);
 
-            fs.writeFileSync(`pilots/${pilot.name}.json`, pilotJSON, (err) => {
-              console.log(err);
-            });
+            fs.writeFileSync(
+              `pilots/${pilot.registration}.json`,
+              pilotJSON,
+              (err) => {
+                console.log(err);
+              }
+            );
 
             console.log(chalk.bgGreen.black("Piloto cadastrado com sucesso!"));
             pilotService();
@@ -763,6 +745,7 @@ const pilotService = () => {
             (file) => path.extname(file).toLowerCase() === ".json"
           );
 
+          let filesProcessed = 0;
           jsonFiles.forEach((jsonFile) => {
             const filePath = path.join(directoryPath, jsonFile);
 
@@ -775,6 +758,11 @@ const pilotService = () => {
               const jsonData = JSON.parse(data);
 
               console.log(`Piloto ${jsonFile.replace(".json", "")}:`, jsonData);
+              filesProcessed++;
+
+              if (filesProcessed === jsonFiles.length) {
+                pilotService();
+              }
             });
           });
         });
@@ -809,6 +797,7 @@ const pilotService = () => {
                   const formattedData = JSON.stringify(jsonData, null, 2);
                   console.log(`Piloto encontrado:\n${formattedData}`);
                   pilotService();
+                  return;
                 } catch (parseError) {
                   console.log("Erro em converter para string!", parseError);
                   return;
@@ -817,7 +806,7 @@ const pilotService = () => {
             }
           })
           .catch((err) => console.log(err));
-      } else if ((option = "Voltar")) {
+      } else if (option === "Voltar") {
         commandTower();
       }
     })
@@ -925,10 +914,6 @@ const approveFlightPlan = () => {
               name: "Altitude",
               message: "Altitude:",
             },
-            {
-              name: "Slots",
-              message: "Slots:",
-            },
           ])
           .then((answers) => {
             const pilotEnrollment = answers["PilotEnrollment"];
@@ -937,17 +922,47 @@ const approveFlightPlan = () => {
             const hour = answers["Hour"];
             const idAirways = answers["IDAirways"];
             const altitude = answers["Altitude"];
-            const slot = answers["Slots"];
+            let sizeAirways;
+            let velocity;
+            let slots = 0;
+            const regex = /[a-zA-Z]/;
 
-            var regex = /[a-zA-Z]/;
+            if (!fs.existsSync(`pilots/${pilotEnrollment}.json`)) {
+              console.log(chalk.bgRed.black("Piloto não encontrado!"));
+              approveFlightPlan();
+              return;
+            }
 
-            if (regex.test(pilotEnrollment)) {
-              console.log(
-                chalk.bgRed.black(
-                  "Padrão não permitido para matricula do piloto, digite apenas números"
-                )
+            if (fs.existsSync(`pilots/${pilotEnrollment}.json`)) {
+              fs.readFile(
+                `pilots/${pilotEnrollment}.json`,
+                "utf8",
+                (err, data) => {
+                  if (err) {
+                    console.log(err);
+                    return;
+                  }
+
+                  try {
+                    const jsonData = JSON.parse(data);
+                    if (jsonData.qualification === false) {
+                      console.log(
+                        chalk.bgRed.black("Piloto com licença invalida")
+                      );
+                      approveFlightPlan();
+                      return;
+                    }
+                  } catch (parseError) {
+                    console.log("Erro em converter para string!", parseError);
+                    return;
+                  }
+                }
               );
-              commandTower();
+            }
+
+            if (!fs.existsSync(`aircrafts/${pilotPrefix}.json`)) {
+              console.log(chalk.bgRed.black("Aeronave não encontrada!"));
+              approveFlightPlan();
               return;
             }
 
@@ -971,6 +986,12 @@ const approveFlightPlan = () => {
               return;
             }
 
+            if (!fs.existsSync(`airways/${idAirways}.json`)) {
+              console.log(chalk.bgRed.black("Aerovia não encontrada!"));
+              approveFlightPlan();
+              return;
+            }
+
             if (regex.test(altitude)) {
               console.log(
                 chalk.bgRed.black(
@@ -991,15 +1012,35 @@ const approveFlightPlan = () => {
               return;
             }
 
-            if (regex.test(slot)) {
-              console.log(
-                chalk.bgRed.black(
-                  "Padrão não permitido para slots, digite apenas números"
-                )
+            try {
+              const aircraftData = fs.readFileSync(
+                `aircrafts/${pilotPrefix}.json`,
+                "utf8"
               );
-              commandTower();
-              return;
+              const aircraftJsonData = JSON.parse(aircraftData);
+              velocity = aircraftJsonData.cruisingSpeed;
+            } catch (err) {
+              console.log(
+                "Erro ao ler ou analisar o arquivo de aeronave:",
+                err
+              );
             }
+
+            try {
+              const airwaysData = fs.readFileSync(
+                `airways/${idAirways}.json`,
+                "utf8"
+              );
+              const airwaysJsonData = JSON.parse(airwaysData);
+              sizeAirways = airwaysJsonData.size;
+            } catch (err) {
+              console.log("Erro ao ler ou analisar o arquivo de airways:", err);
+            }
+
+            const timeHour = sizeAirways / velocity;
+            const timeMin = timeHour * 60;
+
+            slots = Math.ceil(timeMin / 60);
 
             const fightPlan = new newFightPlan(
               pilotEnrollment,
@@ -1008,7 +1049,7 @@ const approveFlightPlan = () => {
               hour,
               idAirways,
               altitude,
-              slot
+              slots
             );
 
             if (!fs.existsSync("fightPlan")) {
