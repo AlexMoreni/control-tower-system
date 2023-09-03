@@ -1234,11 +1234,11 @@ const approveFlightPlan = () => {
 
             const hourStart = hour.split(":");
 
-            const percentageOfAutonomy = autonomy * 0.1;
+            const autonomyMin = sizeAirways * 1.1;
 
-            if (autonomy + percentageOfAutonomy < sizeAirways) {
+            if (autonomy < autonomyMin) {
               console.log(
-                chalk.bgRed.black("Autonomia não é 10% maior que a aerovia")
+                chalk.bgRed.black("A autonomia da aeronave não é 10% maior")
               );
               approveFlightPlan();
               return;
@@ -1551,6 +1551,8 @@ const deleteFlightPlan = () => {
               }
 
               airwaysJsonData.canceled = true;
+              airwaysJsonData.slot = 0;
+              airwaysJsonData.slotsHours = [0];
 
               fs.writeFileSync(
                 filePath,
@@ -1721,6 +1723,14 @@ const airwayOccupation = () => {
           ])
           .then((answers) => {
             const slots = answers["LiberalSlots"];
+
+            if (!fs.existsSync(`fightPlan/${slots}`)) {
+              console.log(
+                chalk.bgRed.black("Plano não encontrado no sistema!")
+              );
+              airwayOccupation();
+              return;
+            }
 
             const directoryPath = "fightPlan";
 
@@ -2024,13 +2034,11 @@ const airwayOccupation = () => {
                     console.log(chalk.bgGreen.black("Slot Encontrado!"));
                     console.log(
                       `Plano ${jsonFile.replace(".json", "")}: ID aerovia: ${
-                        jsonData.id
+                        jsonData.idAirways
                       } Data: ${jsonData.date} - Altitude: ${
                         jsonData.altitude
                       } - Slots: ${jsonData.slot}`
                     );
-                    airwayOccupation();
-                    return;
                   }
 
                   filesProcessed++;
