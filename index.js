@@ -48,15 +48,7 @@ class newAircraftCommercial extends newAircraft {
 }
 
 class newFightPlan {
-  constructor(
-    pilotEnrollment,
-    pilotPrefix,
-    date,
-    hour,
-    idAirways,
-    altitude,
-    slot
-  ) {
+  constructor(pilotEnrollment, pilotPrefix, date, hour, idAirways, altitude) {
     this.id = Math.round(Math.random() * 1000);
     this.pilotEnrollment = pilotEnrollment;
     this.pilotPrefix = pilotPrefix;
@@ -64,7 +56,8 @@ class newFightPlan {
     this.hour = hour;
     this.idAirways = idAirways;
     this.altitude = parseInt(altitude);
-    this.slot = slot;
+    this.slot = 0;
+    this.slotsHours = [0];
     this.canceled = false;
   }
 }
@@ -417,7 +410,7 @@ const listAircraft = () => {
             }
 
             const preventType = type.toLowerCase(type);
-            const typeFormated = capitalizeFirstLetter(preventType);
+            let typeFormated = capitalizeFirstLetter(preventType);
 
             if (typeFormated === "Particular") {
               inquirer
@@ -505,109 +498,221 @@ const listAircraft = () => {
               inquirer
                 .prompt([
                   {
-                    name: "NameCIA",
-                    message: "Nome CIA:",
+                    type: "list",
+                    name: "TypeAircraft",
+                    message: "Qual o tipo da aeronave comercial?",
+                    choices: ["Aeronave de Carga", "Aeronave de Passageiros"],
                   },
-                  {
-                    name: "WeightMax",
-                    message: "Peso Máximo:",
-                  },
-                  { name: "PassengersMax", message: "Passageiros Máximo:" },
                 ])
                 .then((answers) => {
-                  const cia = answers["NameCIA"];
-                  const weightMax = answers["WeightMax"];
-                  const passagersMax = answers["PassengersMax"];
+                  const typeAircraft = answers["TypeAircraft"];
 
-                  var regex = /[a-zA-Z]/;
+                  if (typeAircraft === "Aeronave de Carga") {
+                    inquirer
+                      .prompt([
+                        {
+                          name: "NameCIA",
+                          message: "Nome CIA:",
+                        },
+                        {
+                          name: "WeightMax",
+                          message: "Peso Máximo:",
+                        },
+                      ])
+                      .then((answers) => {
+                        const cia = answers["NameCIA"];
+                        const weightMax = answers["WeightMax"];
 
-                  if (regex.test(cruisingSpeed)) {
-                    console.log(
-                      chalk.bgRed.black(
-                        "Padrão não permitido para velocidade de cruzeiro, digite apenas números"
-                      )
-                    );
-                    listAircraft();
-                    return;
+                        var regex = /[a-zA-Z]/;
+
+                        if (regex.test(cruisingSpeed)) {
+                          console.log(
+                            chalk.bgRed.black(
+                              "Padrão não permitido para velocidade de cruzeiro, digite apenas números"
+                            )
+                          );
+                          listAircraft();
+                          return;
+                        }
+
+                        if (regex.test(autonomy)) {
+                          console.log(
+                            chalk.bgRed.black(
+                              "Padrão não permitido para autonomia, digite apenas números"
+                            )
+                          );
+                          listAircraft();
+                          return;
+                        }
+
+                        if (cia.length < 3) {
+                          console.log(
+                            chalk.bgRed.black(
+                              "Nome curto para CIA, insira ao menos 3 letras"
+                            )
+                          );
+                        }
+
+                        if (regex.test(weightMax)) {
+                          console.log(
+                            chalk.bgRed.black(
+                              "Padrão não permitido para peso, digite apenas números"
+                            )
+                          );
+                          listAircraft();
+                          return;
+                        }
+
+                        typeFormated = "Aeronave Comercial - Carga";
+
+                        const aircraft = new newAircraftCommercial(
+                          prefix,
+                          typeFormated,
+                          cruisingSpeed,
+                          autonomy,
+                          cia,
+                          weightMax
+                        );
+
+                        if (!fs.existsSync("aircrafts")) {
+                          fs.mkdirSync("aircrafts");
+                        }
+
+                        if (
+                          fs.existsSync(`aircrafts/${aircraft.prefix}.json`)
+                        ) {
+                          console.log(
+                            chalk.bgRed.black(
+                              "Essa aeronave ja está cadastrada no sistema!"
+                            )
+                          );
+                          listAircraft();
+                          return;
+                        }
+
+                        const aircraftJSON = JSON.stringify(aircraft, null, 2);
+
+                        fs.writeFileSync(
+                          `aircrafts/${aircraft.prefix}.json`,
+                          aircraftJSON,
+                          (err) => {
+                            console.log(err);
+                          }
+                        );
+
+                        console.log(
+                          chalk.bgGreen.black("Aeronave cadastrada no sistema!")
+                        );
+                        listAircraft();
+                        return;
+                      })
+                      .catch((err) => console.log(err));
+                  } else if (typeAircraft === "Aeronave de Passageiros") {
+                    inquirer
+                      .prompt([
+                        {
+                          name: "NameCIA",
+                          message: "Nome CIA:",
+                        },
+                        {
+                          name: "PassengersMax",
+                          message: "Passageiros Máximo:",
+                        },
+                      ])
+                      .then((answers) => {
+                        const cia = answers["NameCIA"];
+                        const passagersMax = answers["PassengersMax"];
+
+                        console.log(passagersMax);
+
+                        var regex = /[a-zA-Z]/;
+
+                        if (regex.test(cruisingSpeed)) {
+                          console.log(
+                            chalk.bgRed.black(
+                              "Padrão não permitido para velocidade de cruzeiro, digite apenas números"
+                            )
+                          );
+                          listAircraft();
+                          return;
+                        }
+
+                        if (regex.test(autonomy)) {
+                          console.log(
+                            chalk.bgRed.black(
+                              "Padrão não permitido para autonomia, digite apenas números"
+                            )
+                          );
+                          listAircraft();
+                          return;
+                        }
+
+                        if (cia.length < 3) {
+                          console.log(
+                            chalk.bgRed.black(
+                              "Nome curto para CIA, insira ao menos 3 letras"
+                            )
+                          );
+                        }
+
+                        if (regex.test(passagersMax)) {
+                          console.log(
+                            chalk.bgRed.black(
+                              "Padrão não permitido para quantidade de passageiros, digite apenas números"
+                            )
+                          );
+                          listAircraft();
+                          return;
+                        }
+
+                        typeFormated = "Aeronave Comercial - Passageiros";
+
+                        const weightMax = null;
+
+                        const aircraft = new newAircraftCommercial(
+                          prefix,
+                          typeFormated,
+                          cruisingSpeed,
+                          autonomy,
+                          cia,
+                          weightMax,
+                          passagersMax
+                        );
+
+                        if (!fs.existsSync("aircrafts")) {
+                          fs.mkdirSync("aircrafts");
+                        }
+
+                        if (
+                          fs.existsSync(`aircrafts/${aircraft.prefix}.json`)
+                        ) {
+                          console.log(
+                            chalk.bgRed.black(
+                              "Essa aeronave ja está cadastrada no sistema!"
+                            )
+                          );
+                          listAircraft();
+                          return;
+                        }
+
+                        const aircraftJSON = JSON.stringify(aircraft, null, 2);
+
+                        fs.writeFileSync(
+                          `aircrafts/${aircraft.prefix}.json`,
+                          aircraftJSON,
+                          (err) => {
+                            console.log(err);
+                          }
+                        );
+
+                        console.log(
+                          chalk.bgGreen.black("Aeronave cadastrada no sistema!")
+                        );
+                        listAircraft();
+                        return;
+                      })
+                      .catch((err) => console.log(err));
                   }
-
-                  if (regex.test(autonomy)) {
-                    console.log(
-                      chalk.bgRed.black(
-                        "Padrão não permitido para autonomia, digite apenas números"
-                      )
-                    );
-                    listAircraft();
-                    return;
-                  }
-
-                  if (cia.length < 3) {
-                    console.log(
-                      chalk.bgRed.black(
-                        "Nome curto para CIA, insira ao menos 3 letras"
-                      )
-                    );
-                  }
-
-                  if (regex.test(weightMax)) {
-                    console.log(
-                      chalk.bgRed.black(
-                        "Padrão não permitido para peso, digite apenas números"
-                      )
-                    );
-                    listAircraft();
-                    return;
-                  }
-
-                  if (regex.test(passagersMax)) {
-                    console.log(
-                      chalk.bgRed.black(
-                        "Padrão não permitido para quantidade de passageiros, digite apenas números"
-                      )
-                    );
-                    listAircraft();
-                    return;
-                  }
-
-                  const aircraft = new newAircraftCommercial(
-                    prefix,
-                    typeFormated,
-                    cruisingSpeed,
-                    autonomy,
-                    cia,
-                    weightMax,
-                    passagersMax
-                  );
-
-                  if (!fs.existsSync("aircrafts")) {
-                    fs.mkdirSync("aircrafts");
-                  }
-
-                  if (fs.existsSync(`aircrafts/${aircraft.prefix}.json`)) {
-                    console.log(
-                      chalk.bgRed.black(
-                        "Essa aeronave ja está cadastrada no sistema!"
-                      )
-                    );
-                    listAircraft();
-                    return;
-                  }
-
-                  const aircraftJSON = JSON.stringify(aircraft, null, 2);
-
-                  fs.writeFileSync(
-                    `aircrafts/${aircraft.prefix}.json`,
-                    aircraftJSON,
-                    (err) => {
-                      console.log(err);
-                    }
-                  );
-
-                  console.log(
-                    chalk.bgGreen.black("Aeronave cadastrada no sistema!")
-                  );
-                  listAircraft();
-                  return;
                 })
                 .catch((err) => console.log(err));
             } else {
@@ -808,7 +913,7 @@ const pilotService = () => {
                   const jsonData = JSON.parse(data);
                   const formattedData = JSON.stringify(jsonData, null, 2);
                   console.log(`Piloto encontrado:\n${formattedData}`);
-                  listAirways();
+                  pilotService();
                 } catch (parseError) {
                   console.log("Erro em converter para string!", parseError);
                   return;
@@ -845,6 +950,12 @@ const listFreeAltitudes = () => {
       (file) => path.extname(file).toLowerCase() === ".json"
     );
 
+    if (jsonFiles.length === 0) {
+      console.log(chalk.bgRed.black("Nenhum plano cadastrado"));
+      commandTower();
+      return;
+    }
+
     console.log(chalk.bgGreen.black("Altitudes Livres!"));
     let filesProcessed = 0;
 
@@ -866,7 +977,9 @@ const listFreeAltitudes = () => {
 
         allowedAltitudes.forEach((item) => {
           if (jsonData.altitude === item) {
-            occupiedAltitudes.push(jsonData.altitude);
+            if (jsonData.slot !== 0) {
+              occupiedAltitudes.push(jsonData.altitude);
+            }
           }
         });
 
@@ -877,7 +990,7 @@ const listFreeAltitudes = () => {
             (element) => !occupiedAltitudes.includes(element)
           );
           console.log(`Altitudes livres: ${result}`);
-          airwayOccupation();
+          commandTower();
         }
       });
     });
@@ -934,9 +1047,23 @@ const approveFlightPlan = () => {
             const idAirways = answers["IDAirways"];
             const altitude = answers["Altitude"];
             let sizeAirways;
-            let velocity;
-            let slots = 0;
+            let autonomy = 0;
+            let typeAircraft = "";
+            let weightMax = 0;
+            let passengersMax = 0;
             const regex = /[a-zA-Z]/;
+
+            if (regex.test(altitude)) {
+              console.log(
+                chalk.bgRed.black(
+                  "Padrão incorreto para altitude, digite apenas números"
+                )
+              );
+              approveFlightPlan();
+              return;
+            }
+
+            const formatedAltitude = parseInt(altitude);
 
             if (!fs.existsSync(`pilots/${pilotEnrollment}.json`)) {
               console.log(chalk.bgRed.black("Piloto não encontrado!"));
@@ -944,30 +1071,22 @@ const approveFlightPlan = () => {
               return;
             }
 
-            if (fs.existsSync(`pilots/${pilotEnrollment}.json`)) {
-              fs.readFile(
+            try {
+              const pilotData = fs.readFileSync(
                 `pilots/${pilotEnrollment}.json`,
-                "utf8",
-                (err, data) => {
-                  if (err) {
-                    console.log(err);
-                    return;
-                  }
+                "utf8"
+              );
+              const pilotJsonData = JSON.parse(pilotData);
 
-                  try {
-                    const jsonData = JSON.parse(data);
-                    if (jsonData.qualification === false) {
-                      console.log(
-                        chalk.bgRed.black("Piloto com licença invalida")
-                      );
-                      approveFlightPlan();
-                      return;
-                    }
-                  } catch (parseError) {
-                    console.log("Erro em converter para string!", parseError);
-                    return;
-                  }
-                }
+              if (pilotJsonData.qualification === false) {
+                console.log(chalk.bgRed.black("Piloto com licença invalida"));
+                approveFlightPlan();
+                return;
+              }
+            } catch (err) {
+              console.log(
+                "Erro ao ler ou analisar o arquivo de aeronave:",
+                err
               );
             }
 
@@ -979,21 +1098,17 @@ const approveFlightPlan = () => {
 
             if (date.length < 10) {
               console.log(
-                chalk.bgRed.black(
-                  "Padrão não permitido para data digite apenas números e no formato: 00/00/0000"
-                )
+                chalk.bgRed.black("Padrão incorreto na data - 00/00/0000")
               );
-              commandTower();
+              approveFlightPlan();
               return;
             }
 
             if (hour.length < 5) {
               console.log(
-                chalk.bgRed.black(
-                  "Padrão não permitido para hora digite apenas números e no formato: 00:00"
-                )
+                chalk.bgRed.black("Padrão incorreto na hora - 00:00")
               );
-              commandTower();
+              approveFlightPlan();
               return;
             }
 
@@ -1003,23 +1118,15 @@ const approveFlightPlan = () => {
               return;
             }
 
-            if (regex.test(altitude)) {
-              console.log(
-                chalk.bgRed.black(
-                  "Padrão não permitido para altitude, digite apenas números"
-                )
-              );
-              commandTower();
-              return;
-            }
+            const allowedAltitudes = [
+              25000, 26000, 27000, 28000, 29000, 30000, 31000, 32000, 33000,
+              34000, 35000,
+            ];
 
-            if (altitude < 25000 || altitude > 35000) {
-              console.log(
-                chalk.bgRed.black(
-                  "Altura não permitida para altitude, fique entre 25000 a 35000"
-                )
-              );
-              commandTower();
+            if (!allowedAltitudes.includes(formatedAltitude)) {
+              console.log(chalk.bgRed.black("Insira uma altitude valida!"));
+              console.log(chalk.bgGray.white(`Formato: ${allowedAltitudes}`));
+              approveFlightPlan();
               return;
             }
 
@@ -1029,7 +1136,16 @@ const approveFlightPlan = () => {
                 "utf8"
               );
               const aircraftJsonData = JSON.parse(aircraftData);
-              velocity = aircraftJsonData.cruisingSpeed;
+              autonomy = aircraftJsonData.autonomy;
+              typeAircraft = aircraftJsonData.type;
+
+              if (aircraftJsonData.type === "Aeronave Comercial - Carga") {
+                weightMax = aircraftJsonData.weightMax;
+              } else if (
+                aircraftJsonData.type === "Aeronave Comercial - Passageiros"
+              ) {
+                passengersMax = aircraftJsonData.passagersMax;
+              }
             } catch (err) {
               console.log(
                 "Erro ao ler ou analisar o arquivo de aeronave:",
@@ -1048,54 +1164,209 @@ const approveFlightPlan = () => {
               console.log("Erro ao ler ou analisar o arquivo de airways:", err);
             }
 
-            const timeHour = sizeAirways / velocity;
-            const timeMin = timeHour * 60;
-
             const hourStart = hour.split(":");
 
-            const resultHour = timeMin - 60;
+            const percentageOfAutonomy = autonomy * 0.1;
 
-            if (resultHour + parseInt(hourStart[1]) > 60) {
-              slots = Math.ceil(timeMin / 60 + 1);
-            } else {
-              slots = Math.ceil(timeMin / 60);
-            }
-
-            const fightPlan = new newFightPlan(
-              pilotEnrollment,
-              pilotPrefix,
-              date,
-              hour,
-              idAirways,
-              altitude,
-              slots
-            );
-
-            if (!fs.existsSync("fightPlan")) {
-              fs.mkdirSync("fightPlan");
-            }
-
-            if (fs.existsSync(`fightPlan/${fightPlan.id}.json`)) {
-              console.log(chalk.bgRed.black("Esse plano de voo ja existe!"));
+            if (autonomy + percentageOfAutonomy < sizeAirways) {
+              console.log(
+                chalk.bgRed.black("Autonomia não é 10% maior que a aerovia")
+              );
               approveFlightPlan();
               return;
             }
 
-            const fightPlanJSON = JSON.stringify(fightPlan, null, 2);
+            if (typeAircraft === "Aeronave Comercial - Passageiros") {
+              inquirer
+                .prompt([
+                  {
+                    name: "passengersTakeOff",
+                    message:
+                      "Qual a quantidade de passageiros que vai decolar?",
+                  },
+                ])
+                .then((answers) => {
+                  const passengers = answers["passengersTakeOff"];
 
-            fs.writeFileSync(
-              `fightPlan/${fightPlan.id}.json`,
-              fightPlanJSON,
-              (err) => {
-                console.log(err);
+                  if (parseInt(passengers) > passengersMax) {
+                    console.log(
+                      chalk.bgRed.black(
+                        `Excesso de passageiros! essa aeronave só comporta ${passengersMax} passageiros`
+                      )
+                    );
+                    approveFlightPlan();
+                    return;
+                  }
+
+                  if (altitude < 28000) {
+                    console.log(
+                      chalk.bgRed.black(
+                        "Esse tipo de aeronave só pode decolar com altitude entre 28000 a 35000"
+                      )
+                    );
+                    approveFlightPlan();
+                    return;
+                  }
+
+                  const fightPlan = new newFightPlan(
+                    pilotEnrollment,
+                    pilotPrefix,
+                    date,
+                    hour,
+                    idAirways,
+                    formatedAltitude
+                  );
+
+                  if (!fs.existsSync("fightPlan")) {
+                    fs.mkdirSync("fightPlan");
+                  }
+
+                  if (fs.existsSync(`fightPlan/${fightPlan.id}.json`)) {
+                    console.log(
+                      chalk.bgRed.black("Esse plano de voo ja existe!")
+                    );
+                    approveFlightPlan();
+                    return;
+                  }
+
+                  const fightPlanJSON = JSON.stringify(fightPlan, null, 2);
+
+                  fs.writeFileSync(
+                    `fightPlan/${fightPlan.id}.json`,
+                    fightPlanJSON,
+                    (err) => {
+                      console.log(err);
+                    }
+                  );
+
+                  console.log(
+                    chalk.bgGreen.black(
+                      "Plano de voo pre-validado esperando ser aprovado!"
+                    )
+                  );
+                  approveFlightPlan();
+                  return;
+                })
+                .catch((err) => console.log(err));
+            } else if (typeAircraft === "Aeronave Comercial - Carga") {
+              inquirer
+                .prompt([
+                  {
+                    name: "LoadInserted",
+                    message: "Qual a quantidade de carga que vai decolar?",
+                  },
+                ])
+                .then((answers) => {
+                  const loadInserted = answers["LoadInserted"];
+
+                  if (parseInt(loadInserted) > weightMax) {
+                    console.log(
+                      chalk.bgRed.chalk(
+                        `Excesso de peso! essa aeronave só comporta ${weightMax}kg de carga`
+                      )
+                    );
+                    approveFlightPlan();
+                    return;
+                  }
+
+                  if (parseInt(hourStart[0]) > 6) {
+                    console.log(
+                      chalk.bgRed.black(
+                        "Aeronaves de carga só podem voar entre 00:00 e 06:00 da manhã"
+                      )
+                    );
+                    approveFlightPlan();
+                    return;
+                  }
+
+                  const fightPlan = new newFightPlan(
+                    pilotEnrollment,
+                    pilotPrefix,
+                    date,
+                    hour,
+                    idAirways,
+                    formatedAltitude
+                  );
+
+                  if (!fs.existsSync("fightPlan")) {
+                    fs.mkdirSync("fightPlan");
+                  }
+
+                  if (fs.existsSync(`fightPlan/${fightPlan.id}.json`)) {
+                    console.log(
+                      chalk.bgRed.black("Esse plano de voo ja existe!")
+                    );
+                    approveFlightPlan();
+                    return;
+                  }
+
+                  const fightPlanJSON = JSON.stringify(fightPlan, null, 2);
+
+                  fs.writeFileSync(
+                    `fightPlan/${fightPlan.id}.json`,
+                    fightPlanJSON,
+                    (err) => {
+                      console.log(err);
+                    }
+                  );
+
+                  console.log(
+                    chalk.bgGreen.black(
+                      "Plano de voo pre-validado esperando ser aprovado!"
+                    )
+                  );
+                  approveFlightPlan();
+                  return;
+                })
+                .catch((err) => console.log(err));
+            } else {
+              if (altitude > 27000) {
+                console.log(
+                  chalk.bgRed.black(
+                    "Esse tipo de aeronave só pode decolar com altitude entre 25000 a 27000"
+                  )
+                );
+                approveFlightPlan();
+                return;
               }
-            );
 
-            console.log(
-              chalk.bgGreen.black("Plano de voo criado com sucesso!")
-            );
-            approveFlightPlan();
-            return;
+              const fightPlan = new newFightPlan(
+                pilotEnrollment,
+                pilotPrefix,
+                date,
+                hour,
+                idAirways,
+                formatedAltitude
+              );
+
+              if (!fs.existsSync("fightPlan")) {
+                fs.mkdirSync("fightPlan");
+              }
+
+              if (fs.existsSync(`fightPlan/${fightPlan.id}.json`)) {
+                console.log(chalk.bgRed.black("Esse plano de voo ja existe!"));
+                approveFlightPlan();
+                return;
+              }
+
+              const fightPlanJSON = JSON.stringify(fightPlan, null, 2);
+
+              fs.writeFileSync(
+                `fightPlan/${fightPlan.id}.json`,
+                fightPlanJSON,
+                (err) => {
+                  console.log(err);
+                }
+              );
+
+              console.log(
+                chalk.bgGreen.black(
+                  "Plano de voo pre-validado esperando ser aprovado!"
+                )
+              );
+              approveFlightPlan();
+              return;
+            }
           })
           .catch((err) => console.log(err));
       } else if (option === "Voltar") {
@@ -1125,9 +1396,6 @@ const listFlightPlan = () => {
       (file) => path.extname(file).toLowerCase() === ".json"
     );
 
-    console.log(
-      chalk.bgGreen.black(`${jsonFiles.length} Plano de voos encontrados:`)
-    );
     let filesProcessed = 0;
 
     jsonFiles.forEach((jsonFile) => {
@@ -1141,7 +1409,10 @@ const listFlightPlan = () => {
 
         const jsonData = JSON.parse(data);
 
-        console.log(`Plano -  ${jsonFile.replace(".json", "")}:`, jsonData);
+        if (jsonData.slot !== 0) {
+          console.log(`Plano -  ${jsonFile.replace(".json", "")}:`, jsonData);
+        }
+
         filesProcessed++;
         if (filesProcessed === jsonFiles.length) {
           commandTower();
@@ -1314,14 +1585,16 @@ const airwayOccupation = () => {
 
               const jsonData = JSON.parse(data);
 
-              console.log(
-                `Plano ${jsonFile.replace(
-                  ".json",
-                  ""
-                )}: está ocupando a aeorvia: ${jsonData.idAirways} - Data: ${
-                  jsonData.date
-                } - Altitude: ${jsonData.altitude}`
-              );
+              if (jsonData.slot !== 0) {
+                console.log(
+                  `Plano ${jsonFile.replace(
+                    ".json",
+                    ""
+                  )}: está ocupando a aeorvia: ${jsonData.idAirways} - Data: ${
+                    jsonData.date
+                  } - Altitude: ${jsonData.altitude}`
+                );
+              }
 
               filesProcessed++;
 
@@ -1375,6 +1648,7 @@ const airwayOccupation = () => {
 
                   if (parseInt(slots) === jsonData.id) {
                     jsonData.slot = 0;
+                    jsonData.slotsHours = [0];
                     const updatedData = JSON.stringify(jsonData, null, 2);
 
                     fs.writeFileSync(filePath, updatedData, "utf8", (err) => {
@@ -1458,6 +1732,8 @@ const airwayOccupation = () => {
                 }
 
                 let slots = 0;
+                let slotsHoursArr = [];
+                let date = jsonData.date;
 
                 const hourStart = jsonData.hour;
 
@@ -1475,7 +1751,6 @@ const airwayOccupation = () => {
                 }
 
                 jsonData.slot = slots;
-                const updatedData = JSON.stringify(jsonData, null, 2);
 
                 const hourStartFormated = hourStart.split(":");
 
@@ -1486,13 +1761,18 @@ const airwayOccupation = () => {
                         `O plano irá ocupar ${inicial + i}:00 horas`
                       )
                     );
+                    slotsHoursArr.push(inicial + i);
                   }
                 }
+
+                timeInterval(parseInt(hourStartFormated[0]), slots);
 
                 console.log(
                   chalk.bgGreen.black(`O plano irá ocupar ${slots} slots`)
                 );
-                timeInterval(parseInt(hourStartFormated[0]), slots);
+
+                jsonData.slotsHours = slotsHoursArr;
+                const updatedData = JSON.stringify(jsonData, null, 2);
 
                 inquirer
                   .prompt([
@@ -1507,23 +1787,71 @@ const airwayOccupation = () => {
                     const option = answers["ConfirmInsert"];
 
                     if (option === "Confirmar") {
-                      fs.writeFileSync(
-                        `fightPlan/${plan}.json`,
-                        updatedData,
-                        "utf8",
-                        (err) => {
-                          if (err) {
-                            return;
-                          }
-                        }
-                      );
+                      const directoryPath = "fightPlan";
 
-                      console.log(
-                        chalk.bgGreen.black(
-                          `Slot inserido com sucesso no plano ${plan}`
-                        )
-                      );
-                      airwayOccupation();
+                      fs.readdir(directoryPath, (err, files) => {
+                        if (err) {
+                          console.error("Erro ao ler o diretório:", err);
+                          return;
+                        }
+
+                        const jsonFiles = files.filter(
+                          (file) => path.extname(file).toLowerCase() === ".json"
+                        );
+
+                        let filesProcessed = 0;
+
+                        jsonFiles.forEach((jsonFile) => {
+                          const filePath = path.join(directoryPath, jsonFile);
+
+                          fs.readFile(filePath, "utf8", (err, data) => {
+                            if (err) {
+                              console.error("Erro ao ler o arquivo:", err);
+                              return;
+                            }
+
+                            const jsonData = JSON.parse(data);
+
+                            const arrJsonData = jsonData.slotsHours;
+
+                            if (jsonData.date === date) {
+                              for (var i = 0; i < arrJsonData.length; i++) {
+                                if (slotsHoursArr.includes(arrJsonData[i])) {
+                                  console.log(
+                                    chalk.bgRed.black(
+                                      `O slot das ${arrJsonData[i]}hrs Já está ocupado no plano de voo ${jsonData.id}.`
+                                    )
+                                  );
+                                  airwayOccupation();
+                                  return;
+                                }
+                              }
+                            }
+
+                            filesProcessed++;
+
+                            if (filesProcessed === jsonFiles.length) {
+                              fs.writeFileSync(
+                                `fightPlan/${plan}.json`,
+                                updatedData,
+                                "utf8",
+                                (err) => {
+                                  if (err) {
+                                    return;
+                                  }
+                                }
+                              );
+
+                              console.log(
+                                chalk.bgGreen.black(
+                                  `Slot inserido com sucesso no plano ${plan}`
+                                )
+                              );
+                              airwayOccupation();
+                            }
+                          });
+                        });
+                      });
                     } else if (option === "Cancelar") {
                       console.log(chalk.bgRed.black("Ok, cancelando"));
                       airwayOccupation();
