@@ -331,52 +331,120 @@ const listAircraft = () => {
           .then((answers) => {
             const option = answers["optionListAircraft"];
 
-            let directoryPath = "aircrafts";
-            let filesProcessed = 0;
+            if (option === "Comercial") {
+              inquirer
+                .prompt([
+                  {
+                    type: "list",
+                    name: "optionListAircraftComercial",
+                    message: "Qual tipo você deseja listar?",
+                    choices: [
+                      "Aeronave Comercial - Passageiros",
+                      "Aeronave Comercial - Carga",
+                    ],
+                  },
+                ])
+                .then((answers) => {
+                  const option = answers["optionListAircraftComercial"];
 
-            if (!fs.existsSync(directoryPath)) {
-              console.log(
-                chalk.bgRed.black("Nenhuma aeronave cadastrada no sistema!")
-              );
-              listAircraft();
-              return;
-            }
+                  let directoryPath = "aircrafts";
+                  let filesProcessed = 0;
 
-            fs.readdir(directoryPath, (err, files) => {
-              if (err) {
-                console.error("Erro ao ler o diretório:", err);
-                return;
-              }
-
-              const jsonFiles = files.filter(
-                (file) => path.extname(file).toLowerCase() === ".json"
-              );
-
-              jsonFiles.forEach((jsonFile) => {
-                const filePath = path.join(directoryPath, jsonFile);
-
-                fs.readFile(filePath, "utf8", (err, data) => {
-                  if (err) {
-                    console.error("Erro ao ler o arquivo:", err);
+                  if (!fs.existsSync(directoryPath)) {
+                    console.log(
+                      chalk.bgRed.black(
+                        "Nenhuma aeronave cadastrada no sistema!"
+                      )
+                    );
+                    listAircraft();
                     return;
                   }
 
-                  const jsonData = JSON.parse(data);
+                  fs.readdir(directoryPath, (err, files) => {
+                    if (err) {
+                      console.error("Erro ao ler o diretório:", err);
+                      return;
+                    }
 
-                  if (jsonData.type === option) {
-                    console.log(
-                      `Aeronave -  ${jsonFile.replace(".json", "")}:`,
-                      jsonData
+                    const jsonFiles = files.filter(
+                      (file) => path.extname(file).toLowerCase() === ".json"
                     );
-                  }
-                  filesProcessed++;
 
-                  if (filesProcessed === jsonFiles.length) {
-                    listAircraft();
-                  }
+                    jsonFiles.forEach((jsonFile) => {
+                      const filePath = path.join(directoryPath, jsonFile);
+
+                      fs.readFile(filePath, "utf8", (err, data) => {
+                        if (err) {
+                          console.error("Erro ao ler o arquivo:", err);
+                          return;
+                        }
+
+                        const jsonData = JSON.parse(data);
+
+                        if (jsonData.type === option) {
+                          console.log(
+                            `Aeronave -  ${jsonFile.replace(".json", "")}:`,
+                            jsonData
+                          );
+                        }
+                        filesProcessed++;
+
+                        if (filesProcessed === jsonFiles.length) {
+                          listAircraft();
+                        }
+                      });
+                    });
+                  });
+                })
+                .catch((err) => console.log(err));
+            } else if (option === "Particular") {
+              let directoryPath = "aircrafts";
+              let filesProcessed = 0;
+
+              if (!fs.existsSync(directoryPath)) {
+                console.log(
+                  chalk.bgRed.black("Nenhuma aeronave cadastrada no sistema!")
+                );
+                listAircraft();
+                return;
+              }
+
+              fs.readdir(directoryPath, (err, files) => {
+                if (err) {
+                  console.error("Erro ao ler o diretório:", err);
+                  return;
+                }
+
+                const jsonFiles = files.filter(
+                  (file) => path.extname(file).toLowerCase() === ".json"
+                );
+
+                jsonFiles.forEach((jsonFile) => {
+                  const filePath = path.join(directoryPath, jsonFile);
+
+                  fs.readFile(filePath, "utf8", (err, data) => {
+                    if (err) {
+                      console.error("Erro ao ler o arquivo:", err);
+                      return;
+                    }
+
+                    const jsonData = JSON.parse(data);
+
+                    if (jsonData.type === option) {
+                      console.log(
+                        `Aeronave -  ${jsonFile.replace(".json", "")}:`,
+                        jsonData
+                      );
+                    }
+                    filesProcessed++;
+
+                    if (filesProcessed === jsonFiles.length) {
+                      listAircraft();
+                    }
+                  });
                 });
               });
-            });
+            }
           })
           .catch((err) => console.log(err));
       } else if (option === "Registrar nova aeronave") {
@@ -1396,6 +1464,11 @@ const listFlightPlan = () => {
       (file) => path.extname(file).toLowerCase() === ".json"
     );
 
+    if (jsonFiles.length === 0) {
+      console.log(chalk.bgRed.black("Nenhum plano de voo encontrado!"));
+      commandTower();
+      return;
+    }
     let filesProcessed = 0;
 
     jsonFiles.forEach((jsonFile) => {
@@ -1521,6 +1594,12 @@ const airwayOccupation = () => {
             (file) => path.extname(file).toLowerCase() === ".json"
           );
 
+          if (jsonFiles.length === 0) {
+            console.log(chalk.bgRed.black("Nenhum plano de voo encontrado!"));
+            airwayOccupation();
+            return;
+          }
+
           let filesProcessed = 0;
           console.log(chalk.bgRed.black("Slots Ocupados!"));
           jsonFiles.forEach((jsonFile) => {
@@ -1537,7 +1616,7 @@ const airwayOccupation = () => {
               if (jsonData.slot != 0) {
                 console.log(
                   `Plano ${jsonFile.replace(".json", "")}: ID aerovia: ${
-                    jsonData.id
+                    jsonData.idAirways
                   } - Altitude: ${jsonData.altitude} - Slots: ${jsonData.slot}`
                 );
               }
