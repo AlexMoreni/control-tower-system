@@ -1045,7 +1045,7 @@ const listFreeAltitudes = () => {
 
         allowedAltitudes.forEach((item) => {
           if (jsonData.altitude === item) {
-            if (jsonData.slot !== 0) {
+            if (jsonData.slot !== 0 && jsonData.canceled === false) {
               occupiedAltitudes.push(jsonData.altitude);
             }
           }
@@ -1482,7 +1482,7 @@ const listFlightPlan = () => {
 
         const jsonData = JSON.parse(data);
 
-        if (jsonData.slot !== 0) {
+        if (jsonData.slot !== 0 && jsonData.canceled === false) {
           console.log(`Plano -  ${jsonFile.replace(".json", "")}:`, jsonData);
         }
 
@@ -1534,18 +1534,38 @@ const deleteFlightPlan = () => {
               return;
             }
 
-            fs.unlinkSync(`fightPlan/${plan}.json`, (err) => {
-              if (err) {
-                console.log("Erro", err);
+            try {
+              const filePath = `fightPlan/${plan}.json`;
+
+              const airwaysData = fs.readFileSync(filePath, "utf8");
+              const airwaysJsonData = JSON.parse(airwaysData);
+
+              if (airwaysJsonData.slot === 0) {
+                console.log(
+                  chalk.bgRed.black(
+                    "Para apagar um plano primeiro aprove os slots!"
+                  )
+                );
+                commandTower();
+                return;
               }
-            });
 
-            console.log(
-              chalk.bgGreen.black("Plano de voo apagado com sucesso!")
-            );
+              airwaysJsonData.canceled = true;
 
-            commandTower();
-            return;
+              fs.writeFileSync(
+                filePath,
+                JSON.stringify(airwaysJsonData, null, 2),
+                "utf8"
+              );
+
+              console.log(
+                chalk.bgGreen.black("Plano de voo cancelado com sucesso!")
+              );
+              commandTower();
+              return;
+            } catch (err) {
+              console.log("Erro ao ler ou analisar o arquivo de airways:", err);
+            }
           })
           .catch((err) => console.log(err));
       }
@@ -1613,7 +1633,7 @@ const airwayOccupation = () => {
 
               const jsonData = JSON.parse(data);
 
-              if (jsonData.slot != 0) {
+              if (jsonData.slot != 0 && jsonData.canceled === false) {
                 console.log(
                   `Plano ${jsonFile.replace(".json", "")}: ID aerovia: ${
                     jsonData.idAirways
@@ -1664,7 +1684,7 @@ const airwayOccupation = () => {
 
               const jsonData = JSON.parse(data);
 
-              if (jsonData.slot !== 0) {
+              if (jsonData.slot !== 0 && jsonData.canceled === false) {
                 console.log(
                   `Plano ${jsonFile.replace(
                     ".json",
@@ -1893,7 +1913,10 @@ const airwayOccupation = () => {
 
                             const arrJsonData = jsonData.slotsHours;
 
-                            if (jsonData.date === date) {
+                            if (
+                              jsonData.date === date &&
+                              jsonData.canceled === false
+                            ) {
                               for (var i = 0; i < arrJsonData.length; i++) {
                                 if (slotsHoursArr.includes(arrJsonData[i])) {
                                   console.log(
@@ -1975,6 +1998,14 @@ const airwayOccupation = () => {
               const jsonFiles = files.filter(
                 (file) => path.extname(file).toLowerCase() === ".json"
               );
+
+              if (jsonFiles.length === 0) {
+                console.log(
+                  chalk.bgRed.black("Nenhum plano de voo encontrado!")
+                );
+                airwayOccupation();
+                return;
+              }
 
               let filesProcessed = 0;
 
