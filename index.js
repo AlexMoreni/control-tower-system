@@ -1869,6 +1869,7 @@ const airwayOccupation = () => {
                 let slots = 0;
                 let slotsHoursArr = [];
                 let date = jsonData.date;
+                let idPlan = jsonData.id;
 
                 const hourStart = jsonData.hour;
 
@@ -1949,17 +1950,25 @@ const airwayOccupation = () => {
 
                             const arrJsonData = jsonData.slotsHours;
 
-                            if (jsonData.canceled === true) {
+                            let functionCalled = true;
+
+                            if (
+                              jsonData.canceled === true &&
+                              jsonData.date === date &&
+                              jsonData.id == idPlan
+                            ) {
                               console.log(
                                 chalk.bgRed.black(
                                   "Esse plano esta cancelado, não pode adicionar slots"
                                 )
                               );
+                              functionCalled = false;
                               airwayOccupation();
                               return;
                             }
 
                             if (
+                              functionCalled === false &&
                               jsonData.date === date &&
                               jsonData.canceled === false
                             ) {
@@ -1971,6 +1980,7 @@ const airwayOccupation = () => {
                                     )
                                   );
                                   airwayOccupation();
+                                  functionCalled = true;
                                   return;
                                 }
                               }
@@ -2077,10 +2087,6 @@ const airwayOccupation = () => {
                       } Data: ${jsonData.date} - Altitude: ${
                         jsonData.altitude
                       } - Slots: ${jsonData.slot}`
-                    );
-                  } else {
-                    console.log(
-                      chalk.bgRed.black("Nenhum slot encotrado nesse valor!")
                     );
                   }
 
