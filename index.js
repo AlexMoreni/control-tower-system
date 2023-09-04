@@ -56,8 +56,8 @@ class newFightPlan {
     this.hour = hour;
     this.idAirways = idAirways;
     this.altitude = parseInt(altitude);
-    this.slot = 0;
-    this.slotsHours = [0];
+    this.slot = null;
+    this.slotsHours = [null];
     this.canceled = false;
   }
 }
@@ -691,8 +691,6 @@ const listAircraft = () => {
                         const cia = answers["NameCIA"];
                         const passagersMax = answers["PassengersMax"];
 
-                        console.log(passagersMax);
-
                         var regex = /[a-zA-Z]/;
 
                         if (regex.test(cruisingSpeed)) {
@@ -1045,7 +1043,7 @@ const listFreeAltitudes = () => {
 
         allowedAltitudes.forEach((item) => {
           if (jsonData.altitude === item) {
-            if (jsonData.slot !== 0 && jsonData.canceled === false) {
+            if (jsonData.slot !== null && jsonData.canceled === false) {
               occupiedAltitudes.push(jsonData.altitude);
             }
           }
@@ -1172,9 +1170,29 @@ const approveFlightPlan = () => {
               return;
             }
 
+            if (regex.test(date)) {
+              console.log(
+                chalk.bgRed.black(
+                  "Padrão incorreto para data, digite apenas números"
+                )
+              );
+              approveFlightPlan();
+              return;
+            }
+
             if (hour.length < 5) {
               console.log(
                 chalk.bgRed.black("Padrão incorreto na hora - 00:00")
+              );
+              approveFlightPlan();
+              return;
+            }
+
+            if (regex.test(hour)) {
+              console.log(
+                chalk.bgRed.black(
+                  "Padrão incorreto para hora, digite apenas números"
+                )
               );
               approveFlightPlan();
               return;
@@ -1482,7 +1500,7 @@ const listFlightPlan = () => {
 
         const jsonData = JSON.parse(data);
 
-        if (jsonData.slot !== 0 && jsonData.canceled === false) {
+        if (jsonData.slot !== null && jsonData.canceled === false) {
           console.log(`Plano -  ${jsonFile.replace(".json", "")}:`, jsonData);
         }
 
@@ -1540,7 +1558,7 @@ const deleteFlightPlan = () => {
               const airwaysData = fs.readFileSync(filePath, "utf8");
               const airwaysJsonData = JSON.parse(airwaysData);
 
-              if (airwaysJsonData.slot === 0) {
+              if (airwaysJsonData.slot === null) {
                 console.log(
                   chalk.bgRed.black(
                     "Para apagar um plano primeiro aprove os slots!"
@@ -1550,9 +1568,17 @@ const deleteFlightPlan = () => {
                 return;
               }
 
+              if (airwaysJsonData.canceled === true) {
+                console.log(
+                  chalk.bgRed.black("Esse plano de voo já esta cancelado")
+                );
+                commandTower();
+                return;
+              }
+
               airwaysJsonData.canceled = true;
-              airwaysJsonData.slot = 0;
-              airwaysJsonData.slotsHours = [0];
+              airwaysJsonData.slot = null;
+              airwaysJsonData.slotsHours = [null];
 
               fs.writeFileSync(
                 filePath,
@@ -1635,7 +1661,7 @@ const airwayOccupation = () => {
 
               const jsonData = JSON.parse(data);
 
-              if (jsonData.slot != 0 && jsonData.canceled === false) {
+              if (jsonData.slot !== null && jsonData.canceled === false) {
                 console.log(
                   `Plano ${jsonFile.replace(".json", "")}: ID aerovia: ${
                     jsonData.idAirways
@@ -1686,7 +1712,7 @@ const airwayOccupation = () => {
 
               const jsonData = JSON.parse(data);
 
-              if (jsonData.slot !== 0 && jsonData.canceled === false) {
+              if (jsonData.slot !== null && jsonData.canceled === false) {
                 console.log(
                   `Plano ${jsonFile.replace(
                     ".json",
@@ -1724,7 +1750,7 @@ const airwayOccupation = () => {
           .then((answers) => {
             const slots = answers["LiberalSlots"];
 
-            if (!fs.existsSync(`fightPlan/${slots}`)) {
+            if (!fs.existsSync(`fightPlan/${slots}.json`)) {
               console.log(
                 chalk.bgRed.black("Plano não encontrado no sistema!")
               );
@@ -1756,8 +1782,8 @@ const airwayOccupation = () => {
                   const jsonData = JSON.parse(data);
 
                   if (parseInt(slots) === jsonData.id) {
-                    jsonData.slot = 0;
-                    jsonData.slotsHours = [0];
+                    jsonData.slot = null;
+                    jsonData.slotsHours = [null];
                     const updatedData = JSON.stringify(jsonData, null, 2);
 
                     fs.writeFileSync(filePath, updatedData, "utf8", (err) => {
@@ -1923,6 +1949,16 @@ const airwayOccupation = () => {
 
                             const arrJsonData = jsonData.slotsHours;
 
+                            if (jsonData.canceled === true) {
+                              console.log(
+                                chalk.bgRed.black(
+                                  "Esse plano esta cancelado, não pode adicionar slots"
+                                )
+                              );
+                              airwayOccupation();
+                              return;
+                            }
+
                             if (
                               jsonData.date === date &&
                               jsonData.canceled === false
@@ -2018,6 +2054,7 @@ const airwayOccupation = () => {
               }
 
               let filesProcessed = 0;
+              console.log(chalk.bgGreen.black("Slots Encontrados:"));
 
               jsonFiles.forEach((jsonFile) => {
                 const filePath = path.join(directoryPath, jsonFile);
@@ -2030,8 +2067,10 @@ const airwayOccupation = () => {
 
                   const jsonData = JSON.parse(data);
 
-                  if (jsonData.slot === parseInt(numberSlot)) {
-                    console.log(chalk.bgGreen.black("Slot Encontrado!"));
+                  if (
+                    jsonData.slot === parseInt(numberSlot) &&
+                    jsonData.canceled === false
+                  ) {
                     console.log(
                       `Plano ${jsonFile.replace(".json", "")}: ID aerovia: ${
                         jsonData.idAirways
@@ -2039,12 +2078,15 @@ const airwayOccupation = () => {
                         jsonData.altitude
                       } - Slots: ${jsonData.slot}`
                     );
+                  } else {
+                    console.log(
+                      chalk.bgRed.black("Nenhum slot encotrado nesse valor!")
+                    );
                   }
 
                   filesProcessed++;
 
                   if (filesProcessed === jsonFiles.length) {
-                    console.log(chalk.bgRed.black("Nenhum slot encontrado!"));
                     airwayOccupation();
                   }
                 });
